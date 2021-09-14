@@ -33,10 +33,7 @@ endif()
 
 target_include_directories(engine PUBLIC "src")
 target_include_directories(engine PUBLIC "3rd/include")
-target_include_directories(engine PUBLIC "3rd/physx/physx/include")
-target_include_directories(engine PUBLIC "3rd/physx/pxshared/include")
 
-target_link_directories(engine PUBLIC "3rd/lib/physx")
 if (UNIX)
   target_link_libraries(engine dl)
 endif(UNIX)
