@@ -42,7 +42,7 @@ ECS::Entity *CreatePointLight(const glm::vec3 &pos) {
   return ent;
 }
 
-ECS::Entity* CreateDirLight(const glm::vec3& pos, const glm::vec3& forward) {
+ECS::Entity* CreateDirLight(const glm::vec3& forward) {
   ECS::Entity* ent = new ECS::Entity();
 
   glm::vec3 up(0.0f, 1.0f, 0.0f);
@@ -54,6 +54,7 @@ ECS::Entity* CreateDirLight(const glm::vec3& pos, const glm::vec3& forward) {
   }
   up = glm::cross(fwd, right);
   glm::mat4 trans(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(fwd, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+
   ent->AddComponent(new ECS::ComponentTransform(trans));
 
   ECS::LightParam light_param;
@@ -92,12 +93,13 @@ int main() {
     glm::vec3(0.0f, -3.0f, 0.0f),
     glm::vec3(1.0f, 1.0f, 1.0f)));
 
+  scene_obj->AddEntity(CreateDirLight(glm::vec3(4.0f, -1.0f, 0.0f)));
 
-  scene_obj->AddEntity(CreatePointLight(glm::vec3(0.0f, 5.0f, -10.0f)));
+  // scene_obj->AddEntity(CreatePointLight(glm::vec3(0.0f, 5.0f, -10.0f)));
   scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\BlenderOutput\\sgb\\untitled.obj",
                                    glm::vec3(0.0f, 0.0f, -15.0f),
                                    glm::vec3(0.01f, 0.01f, 0.01f)));
-  scene_obj->AddEntity(CreatePointLight(glm::vec3(30.0f, 5.0f, 0.0f)));
+  // scene_obj->AddEntity(CreatePointLight(glm::vec3(30.0f, 5.0f, 0.0f)));
   scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\BlenderOutput\\TestModel\\untitled.obj",
     glm::vec3(30.0f, -1.0f, 0.0f),
     glm::vec3(1.0f, 1.0f, 1.0f)));

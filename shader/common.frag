@@ -46,7 +46,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
   float diff = max(dot(normal, lightDir), 0.0);
 
   vec3 midDir = normalize(lightDir + viewDir);
-  float spec = pow(max(dot(midDir, viewDir), 0.0), 32);
+  float spec = pow(max(dot(midDir, normal), 0.0), 32);
 
   vec3 ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
   vec3 diffuse = light.diffuse * vec3(texture(texture_diffuse1, TexCoords)) * diff;
@@ -63,7 +63,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
   float diff = max(dot(normal, lightDir), 0.0);
 
   vec3 midDir = normalize(lightDir + viewDir);
-  float spec = pow(max(dot(midDir, viewDir), 0.0), 32);
+  float spec = pow(max(dot(midDir, normal), 0.0), 32);
 
   vec3 ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
   vec3 diffuse = light.diffuse * vec3(texture(texture_diffuse1, TexCoords)) * diff;
