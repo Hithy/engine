@@ -66,6 +66,8 @@ void World::initGL() {
   glEnable(GL_DEPTH_TEST);
 }
 
+void World::initPhysx() {}
+
 void World::updateInput() {
   if (glfwGetKey(_window, GLFW_KEY_Q) == GLFW_PRESS) {
     glfwSetWindowShouldClose(_window, true);
@@ -99,7 +101,10 @@ void World::render() {
   glfwPollEvents();
 }
 
-void World::Init() { initGL(); }
+void World::Init() {
+  initGL();
+  initPhysx();
+}
 
 void World::Run() {
   uint64_t curr_frame = 0;

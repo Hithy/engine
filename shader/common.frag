@@ -45,8 +45,8 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 
   float diff = max(dot(normal, lightDir), 0.0);
 
-  vec3 reflectDir = reflect(-lightDir, normal);
-  float spec = pow(max(dot(reflectDir, viewDir), 0.0), 32);
+  vec3 midDir = normalize(lightDir + viewDir);
+  float spec = pow(max(dot(midDir, viewDir), 0.0), 32);
 
   vec3 ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
   vec3 diffuse = light.diffuse * vec3(texture(texture_diffuse1, TexCoords)) * diff;
@@ -62,8 +62,8 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
   vec3 lightDir = normalize(light.position - fragPos);
   float diff = max(dot(normal, lightDir), 0.0);
 
-  vec3 reflectDir = reflect(-lightDir, normal);
-  float spec = pow(max(dot(reflectDir, viewDir), 0.0), 32);
+  vec3 midDir = normalize(lightDir + viewDir);
+  float spec = pow(max(dot(midDir, viewDir), 0.0), 32);
 
   vec3 ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
   vec3 diffuse = light.diffuse * vec3(texture(texture_diffuse1, TexCoords)) * diff;
@@ -82,7 +82,7 @@ void main() {
   }
 
   for (int i = 0; i < direction_light_count; i++) {
-    result += CalcPointLight(direction_light_list[i], norm, FragPos, viewDir);
+    result += CalcDirLight(direction_light_list[i], norm, viewDir);
   }
 
   FragColor = vec4(result, 1.0f);

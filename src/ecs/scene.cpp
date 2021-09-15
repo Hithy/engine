@@ -126,7 +126,7 @@ void Scene::updateShaderVP() {
       cam_ent->GetComponent(ComponentType_Camera));
   auto view = cam_comp->GetView();
   auto projection =
-      glm::perspective(glm::radians(cam_comp->GetFOV()), ratio, 0.1f, 100.0f);
+      glm::perspective(glm::radians(cam_comp->GetFOV()), ratio, 0.1f, 1000.0f);
 
   _global_shader->SetFM4("view", glm::value_ptr(view));
   _global_shader->SetFM4("projection", glm::value_ptr(projection));
@@ -180,7 +180,7 @@ void Scene::updateShaderLight() {
 
     const auto &light_param = comp_light->GetLightParam();
     auto light_type = comp_light->GetType();
-    int light_num = ++light_count[light_type];
+    int light_num = light_count[light_type]++;
 
     std::string light_prefix = light_shader_name[light_type] + "_list[" +
                                std::to_string(light_num) + "]";

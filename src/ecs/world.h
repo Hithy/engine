@@ -60,6 +60,8 @@ public:
 private:
   World();
   void initGL();
+  void initPhysx();
+
   void updateInput();
   void logic();
   void render();

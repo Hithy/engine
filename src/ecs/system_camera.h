@@ -9,8 +9,5 @@ public:
   void Tick() override;
   void Start() override;
   void Stop() override;
-
-private:
-  uint64_t _current;
 };
 } // namespace ECS
