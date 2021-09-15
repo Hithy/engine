@@ -7,10 +7,10 @@ public:
   void Use();
   void SetFloat(const char* name, float value);
   void SetInt(const char* name, int value);
-  void SetFM4(const char* name, float* ptr);
-  void SetFV3(const char* name, float* ptr);
+  void SetFM4(const char* name, const float* ptr);
+  void SetFV3(const char* name, const float* ptr);
   void SetFV3(const char* name, float x, float y, float z);
-  void SetFV4(const char* name, float* ptr);
+  void SetFV4(const char* name, const float* ptr);
   void SetFV4(const char* name, float x, float y, float z, float w);
 
 private:

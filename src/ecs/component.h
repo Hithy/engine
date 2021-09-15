@@ -9,6 +9,7 @@ enum ComponentType {
   ComponentType_Camera,
   ComponentType_Model,
   ComponentType_Physics,
+  ComponentType_Light,
 
   ComponentType_MAX,
 };

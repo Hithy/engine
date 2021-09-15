@@ -74,13 +74,13 @@ void Shader::SetInt(const char* name, int value)
   glUniform1i(param_pos, value);
 }
 
-void Shader::SetFM4(const char* name, float* ptr)
+void Shader::SetFM4(const char* name, const float* ptr)
 {
   int param_pos = glGetUniformLocation(id, name);
   glUniformMatrix4fv(param_pos, 1, GL_FALSE, ptr);
 }
 
-void Shader::SetFV3(const char* name, float* ptr)
+void Shader::SetFV3(const char* name, const float* ptr)
 {
   int param_pos = glGetUniformLocation(id, name);
   glUniform3f(param_pos, ptr[0], ptr[1], ptr[2]);
@@ -92,7 +92,7 @@ void Shader::SetFV3(const char* name, float x, float y, float z)
   glUniform3f(param_pos, x, y, z);
 }
 
-void Shader::SetFV4(const char* name, float* ptr)
+void Shader::SetFV4(const char* name, const float* ptr)
 {
   int param_pos = glGetUniformLocation(id, name);
   glUniform4f(param_pos, ptr[0], ptr[1], ptr[2], ptr[3]);
