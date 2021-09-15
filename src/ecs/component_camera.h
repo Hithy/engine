@@ -7,7 +7,9 @@
 namespace ECS {
 class ComponentCamera : public Component {
 public:
-  ComponentCamera() : Component(ComponentType_Camera), _fov(60.0f){};
+  ComponentCamera()
+      : Component(ComponentType_Camera), _fov(60.0f), _pitch(0.0f),
+        _yaw(0.0f){};
 
   float GetYaw() const { return _yaw; }
   float GetPitch() const { return _pitch; }
