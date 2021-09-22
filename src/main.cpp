@@ -7,6 +7,7 @@
 #include "ecs/entity_base.h"
 #include "ecs/system_camera.h"
 #include "ecs/system_model.h"
+#include "ecs/system_input.h"
 
 #include "glm/glm.hpp"
 
@@ -21,6 +22,27 @@ ECS::Entity *CreateModelObj(const char *path, const glm::vec3 &pos, const glm::v
   return model_ent;
 }
 
+ECS::Entity* CreateSunLight(const glm::vec3& pos) {
+  ECS::Entity* ent = new ECS::Entity();
+  glm::mat4 init_trans = glm::mat4(1.0f);
+  init_trans = glm::translate(init_trans, pos);
+  ent->AddComponent(new ECS::ComponentTransform(init_trans));
+
+  ECS::LightParam light_param;
+  light_param.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+  light_param.diffuse = glm::vec3(10.0f, 10.0f, 10.0f);
+  light_param.specular = glm::vec3(10.0f, 10.0f, 10.0f);
+
+  light_param.constant = 1.0f;
+  light_param.linear = 0.009f;
+  light_param.quadratic = 0.0032f;
+  auto comp_light = new ECS::ComponentLight(ECS::LightType_Point);
+  comp_light->SetLightParam(light_param);
+
+  ent->AddComponent(comp_light);
+  return ent;
+}
+
 ECS::Entity *CreatePointLight(const glm::vec3 &pos) {
   ECS::Entity* ent = new ECS::Entity();
   glm::mat4 init_trans = glm::mat4(1.0f);
@@ -28,9 +50,9 @@ ECS::Entity *CreatePointLight(const glm::vec3 &pos) {
   ent->AddComponent(new ECS::ComponentTransform(init_trans));
 
   ECS::LightParam light_param;
-  light_param.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
-  light_param.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-  light_param.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+  light_param.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+  light_param.diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
+  light_param.specular = glm::vec3(0.0f, 0.8f, 0.0f);
 
   light_param.constant = 1.0f;
   light_param.linear = 0.09f;
@@ -45,23 +67,36 @@ ECS::Entity *CreatePointLight(const glm::vec3 &pos) {
 ECS::Entity* CreateDirLight(const glm::vec3& forward) {
   ECS::Entity* ent = new ECS::Entity();
 
-  glm::vec3 up(0.0f, 1.0f, 0.0f);
-  auto fwd = glm::normalize(forward);
-  auto right = glm::cross(up, fwd);
-  if (glm::length(right) < 0.001) {
-    up = glm::vec3(1.0f, 0.0f, 0.0f);
-    right = glm::cross(up, fwd);
-  }
-  up = glm::cross(fwd, right);
-  glm::mat4 trans(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(fwd, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+  glm::mat4 trans = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), forward * -1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+  trans = glm::inverse(trans);
 
   ent->AddComponent(new ECS::ComponentTransform(trans));
 
   ECS::LightParam light_param;
   light_param.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
-  light_param.diffuse = glm::vec3(0.1f, 0.1f, 0.1f);
-  light_param.specular = glm::vec3(0.6f, 0.6f, 0.6f);
+  light_param.diffuse = glm::vec3(0.3f, 0.3f, 0.3f);
+  light_param.specular = glm::vec3(0.1f, 0.1f, 0.1f);
   
+  auto comp_light = new ECS::ComponentLight(ECS::LightType_Direction);
+  comp_light->SetLightParam(light_param);
+
+  ent->AddComponent(comp_light);
+  return ent;
+}
+
+ECS::Entity* CreateAmbientLight(const glm::vec3& forward) {
+  ECS::Entity* ent = new ECS::Entity();
+
+  glm::mat4 trans = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), forward * -1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+  trans = glm::inverse(trans);
+
+  ent->AddComponent(new ECS::ComponentTransform(trans));
+
+  ECS::LightParam light_param;
+  light_param.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+  light_param.diffuse = glm::vec3(0.0f, 0.0f, 0.0f);
+  light_param.specular = glm::vec3(0.0f, 0.0f, 0.0f);
+
   auto comp_light = new ECS::ComponentLight(ECS::LightType_Direction);
   comp_light->SetLightParam(light_param);
 
@@ -84,26 +119,36 @@ int main() {
   auto* scene_obj = new ECS::Scene();
   scene_obj->AddSystem(new ECS::SystemCamera());
   scene_obj->AddSystem(new ECS::SystemModel());
+  scene_obj->AddSystem(new ECS::SystemInput());
 
   // create entity
   auto cam_ent = CreateCamera();
   scene_obj->AddEntity(cam_ent);
   // floor
-  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\BlenderOutput\\floor\\untitled.obj",
+  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\floor\\untitled.obj",
     glm::vec3(0.0f, -3.0f, 0.0f),
     glm::vec3(1.0f, 1.0f, 1.0f)));
 
-  scene_obj->AddEntity(CreateDirLight(glm::vec3(4.0f, -1.0f, 0.0f)));
+  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\wall\\untitled.obj",
+    glm::vec3(5.0f, 0.0f, -15.0f),
+    glm::vec3(1.0f, 2.0f, 4.0f)));
 
-  // scene_obj->AddEntity(CreatePointLight(glm::vec3(0.0f, 5.0f, -10.0f)));
-  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\BlenderOutput\\sgb\\untitled.obj",
+  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\wall\\untitled.obj",
+    glm::vec3(-5.0f, 0.0f, -15.0f),
+    glm::vec3(1.0f, 2.0f, 4.0f)));
+
+  scene_obj->AddEntity(CreateAmbientLight(glm::vec3(4.0f, -4.0f, 0.0f)));
+
+  // scene_obj->AddEntity(CreateDirLight(glm::vec3(4.0f, -4.0f, 0.0f)));
+  // scene_obj->AddEntity(CreateDirLight(glm::vec3(-4.0f, -4.0f, 4.0f)));
+
+  scene_obj->AddEntity(CreatePointLight(glm::vec3(0.0f, 0.0f, -18.0f)));
+  scene_obj->AddEntity(CreateSunLight(glm::vec3(0.0f, 5.0f, -35.0f)));
+  // scene_obj->AddEntity(CreatePointLight(glm::vec3(5.0f, 5.0f, -20.0f)));
+  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\sgb\\untitled.obj",
                                    glm::vec3(0.0f, 0.0f, -15.0f),
                                    glm::vec3(0.01f, 0.01f, 0.01f)));
-  // scene_obj->AddEntity(CreatePointLight(glm::vec3(30.0f, 5.0f, 0.0f)));
-  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\BlenderOutput\\TestModel\\untitled.obj",
-    glm::vec3(30.0f, -1.0f, 0.0f),
-    glm::vec3(1.0f, 1.0f, 1.0f)));
-  
+
   scene_obj->SetActiveCamera(cam_ent->GetID());
 
   world.AddScene(scene_obj);

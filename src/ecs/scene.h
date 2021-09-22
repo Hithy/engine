@@ -15,6 +15,11 @@ public:
   Scene();
   virtual ~Scene();
 
+  void ToggleHDR();
+  void ToggleGamma();
+
+  void OnAddedToWorld();
+
   void Logic();
   void Render();
 
@@ -29,8 +34,17 @@ public:
   void SetActiveCamera(uint64_t ent_id) { _active_camera = ent_id; }
 
 private:
+  void initHDR();
+
+private:
   void updateShaderVP();
   void updateShaderLight();
+
+  void drawObjects(Shader* shader);
+
+  void renderScene();
+  void renderShadow();
+  void renderQuad();
 
 private:
   // id -> entity
@@ -41,5 +55,14 @@ private:
 
   uint64_t _active_camera;
   Shader *_global_shader;
+
+  bool _enable_hdr;
+  bool _enable_gamma;
+
+  unsigned int _shadow_fbo;
+  unsigned int _hdr_fbo;
+  unsigned int _hdr_vao;
+  unsigned int _post_texture;
+  unsigned int _post_depth;
 };
 } // namespace ECS

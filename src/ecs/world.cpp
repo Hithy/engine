@@ -1,4 +1,5 @@
 #include "world.h"
+#include <iostream>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -40,11 +41,26 @@ World::World() {
   ctx.window_height = 1080;
 }
 
+void GLAPIENTRY
+MessageCallback(GLenum source,
+  GLenum type,
+  GLuint id,
+  GLenum severity,
+  GLsizei length,
+  const GLchar* message,
+  const void* userParam)
+{
+  fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+    (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+    type, severity, message);
+}
+
 void World::initGL() {
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
   _window = glfwCreateWindow(ctx.window_width, ctx.window_height,
                              ctx.title.c_str(), NULL, NULL);
@@ -64,6 +80,9 @@ void World::initGL() {
   glfwSetScrollCallback(_window, scroll_callback);
 
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_DEBUG_OUTPUT);
+  glDebugMessageCallback(MessageCallback, 0);
 }
 
 void World::initPhysx() {}
@@ -77,6 +96,13 @@ void World::updateInput() {
   ctx.input.S_Status = glfwGetKey(_window, GLFW_KEY_S);
   ctx.input.A_Status = glfwGetKey(_window, GLFW_KEY_A);
   ctx.input.D_Status = glfwGetKey(_window, GLFW_KEY_D);
+  ctx.input.H_Status = glfwGetKey(_window, GLFW_KEY_H);
+
+  for (int i = GLFW_KEY_0; i <= GLFW_KEY_GRAVE_ACCENT; i++) {
+    auto new_status = glfwGetKey(_window, i);
+    ctx.input.KeyToggled[i] = bool(ctx.input.KeyStatus[i] != new_status);
+    ctx.input.KeyStatus[i] = new_status;
+  }
 }
 
 void World::logic() {
@@ -86,7 +112,7 @@ void World::logic() {
     scn->Logic();
   }
 
-  ctx.input.Clear();
+  ctx.input.ClearEachFrame();
 }
 
 void World::render() {
@@ -99,6 +125,12 @@ void World::render() {
 
   glfwSwapBuffers(_window);
   glfwPollEvents();
+}
+
+void World::AddScene(Scene* scn)
+{
+  _scenes.push_back(scn);
+  scn->OnAddedToWorld();
 }
 
 void World::Init() {

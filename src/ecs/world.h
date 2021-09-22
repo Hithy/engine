@@ -21,8 +21,12 @@ struct InputContext {
   int S_Status = -1;
   int A_Status = -1;
   int D_Status = -1;
+  int H_Status = -1;
 
-  void Clear() {
+  int KeyStatus[128] = { 0 };
+  int KeyToggled[128] = { 0 };
+
+  void ClearEachFrame() {
     move_delta_x = 0.0;
     move_delta_y = 0.0;
     scroll_delta_x = 0.0;
@@ -31,6 +35,7 @@ struct InputContext {
     S_Status = -1;
     A_Status = -1;
     D_Status = -1;
+    H_Status = -1;
   }
 };
 
@@ -50,7 +55,7 @@ public:
     return inst;
   }
 
-  void AddScene(Scene *scn) { _scenes.push_back(scn); }
+  void AddScene(Scene* scn);
 
   void Init();
   void Run();

@@ -33,16 +33,21 @@ enum LightType {
 
 class ComponentLight : public Component {
 public:
-  ComponentLight(LightType type)
-      : Component(ComponentType_Light), _type(type){};
+  ComponentLight(LightType type);
+  virtual ~ComponentLight();
 
-  LightType GetType() { return _type; }
+  LightType GetLightType() { return _type; }
 
   void SetLightParam(const LightParam &light) { _light = light; }
   const LightParam &GetLightParam() const { return _light; }
 
+  void SetShadowTexture(unsigned int texture);
+  unsigned int GetShadowTexture() const { return _shadow_texture; }
+
 private:
   LightType _type;
   LightParam _light;
+
+  unsigned int _shadow_texture;
 };
 } // namespace ECS

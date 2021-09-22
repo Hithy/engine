@@ -20,9 +20,13 @@ void Mesh::Draw(Shader* shader) const
     {TextureType_Diffuse, "texture_diffuse"},
     {TextureType_Specular, "texture_specular"},
     {TextureType_Normal, "texture_normal"},
-    {TextureType_Height, "texture_height"},
+    // {TextureType_Height, "texture_height"},
   };
   int texture_count_map[TextureType_MAX] = { 0 };
+
+  for (auto const& item : texture_name_map) {
+    shader->SetInt((item.second + "_enable").c_str(), 0);
+  }
 
   for (int i = 0; i < _textures.size(); i++) {
     glActiveTexture(GL_TEXTURE0 + i);
@@ -32,11 +36,16 @@ void Mesh::Draw(Shader* shader) const
 
     std::string texture_param = texture_name_map[texture_type] + std::to_string(texture_count);
     shader->SetInt(texture_param.c_str(), i);
+    shader->SetInt((texture_name_map[texture_type] + "_enable").c_str(), 1);
   }
 
   glBindVertexArray(_vao);
   glDrawElements(GL_TRIANGLES, _indices.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
+
+  for (auto const& item : texture_name_map) {
+    shader->SetInt((item.second + "_enable").c_str(), 0);
+  }
 }
 
 void Mesh::SetupMesh()
@@ -60,7 +69,13 @@ void Mesh::SetupMesh()
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, Normal));
   // uv
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, TexCoords));
+  // tangent
+  glEnableVertexAttribArray(3);
+  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+  // bitangent
+  glEnableVertexAttribArray(4);
+  glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
