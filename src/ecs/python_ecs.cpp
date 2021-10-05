@@ -11,9 +11,12 @@
 #ifdef WIN32
 #include <Windows.h>
 #else
+#include <unistd.h>
 #endif
 
 namespace ECS {
+
+#ifdef WIN32
 static void GetAbsPath(wchar_t* output, int buff_size, const char* sub_path) {
   char file_path[2048] = { 0 };
   GetCurrentDirectory(2048, file_path);
@@ -33,11 +36,38 @@ static void InitPath() {
   memset(output, 0, sizeof(output[0]) * 2048);
   GetAbsPath(output, 2048, "script");
   if (path.size()) {
-    path += L";";
+    path += L":";
   }
   path += output;
   Py_SetPath(path.c_str());
 }
+#else
+static void GetAbsPath(wchar_t* output, int buff_size, const char* sub_path) {
+  char file_path[2048] = { 0 };
+  getcwd(file_path, buff_size);
+
+  strcat(file_path, "/");
+  strcat(file_path, sub_path);
+
+  swprintf(output, buff_size, L"%s", file_path);
+}
+
+static void InitPath() {
+  wchar_t output[2048] = { 0 };
+  memset(output, 0, sizeof(output[0]) * 2048);
+  GetAbsPath(output, 2048, "3rd/Python-3.9.7");
+  Py_SetPythonHome(output);
+
+  
+  memset(output, 0, sizeof(output[0]) * 2048);
+  GetAbsPath(output, 2048, "3rd/Python-3.9.7/Lib");
+  std::wstring path = output;
+  memset(output, 0, sizeof(output[0]) * 2048);
+  GetAbsPath(output, 2048, "script");
+  path = path + L":" + output;
+  Py_SetPath(path.c_str());
+}
+#endif
 
 int cxx_test_add(short a, int b) {
   return a + b;

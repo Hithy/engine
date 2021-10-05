@@ -61,11 +61,11 @@ template<typename... Res>
 static void BuildParamTypes(char* addr, ParamList<Res...>* param);
 
 template<>
-static void BuildParamTypes(char* addr, ParamList<>* param) {
+void BuildParamTypes(char* addr, ParamList<>* param) {
 }
 
 template<typename T, typename... Res>
-static void BuildParamTypes(char* addr, ParamList<T, Res...>* param) {
+void BuildParamTypes(char* addr, ParamList<T, Res...>* param) {
   *addr = GetPyBuildType<T>();
   BuildParamTypes(addr + 1, (ParamList<Res...>*)param);
 }
@@ -194,7 +194,7 @@ auto wrap_func(void (Cls::* fn)(Args...)) {
 
 #define BIND_CLS_FUNC_DEFINE(cls, fn) \
 static PyObject* PYBIND__##cls__##fn(PyObject* self, PyObject* args) { \
-  static auto inner_func = wrap_func(&##cls::##fn); \
+  static auto inner_func = wrap_func(&cls::fn); \
   return inner_func(self, args); \
 }
 
@@ -202,7 +202,7 @@ static PyObject* PYBIND__##cls__##fn(PyObject* self, PyObject* args) { \
 
 #define BIND_FUNC_DEFINE(fn) \
 static PyObject* PYBIND_##fn(PyObject* self, PyObject* args) { \
-  static auto inner_func = wrap_func(##fn); \
+  static auto inner_func = wrap_func(fn); \
   return inner_func(self, args); \
 }
 
