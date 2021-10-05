@@ -32,13 +32,12 @@ static void InitPath() {
   GetAbsPath(output, 2048, "3rd\\Python-3.9.7");
   Py_SetPythonHome(output);
 
-  std::wstring path = Py_GetPath();
+  memset(output, 0, sizeof(output[0]) * 2048);
+  GetAbsPath(output, 2048, "3rd\\Python-3.9.7\\Lib");
+  std::wstring path = output;
   memset(output, 0, sizeof(output[0]) * 2048);
   GetAbsPath(output, 2048, "script");
-  if (path.size()) {
-    path += L":";
-  }
-  path += output;
+  path = path + L";" + output;
   Py_SetPath(path.c_str());
 }
 #else
@@ -57,7 +56,6 @@ static void InitPath() {
   memset(output, 0, sizeof(output[0]) * 2048);
   GetAbsPath(output, 2048, "3rd/Python-3.9.7");
   Py_SetPythonHome(output);
-
   
   memset(output, 0, sizeof(output[0]) * 2048);
   GetAbsPath(output, 2048, "3rd/Python-3.9.7/Lib");
