@@ -5,15 +5,17 @@
 
 #include "entity.h"
 #include "component_base.h"
+#include "pybind/pyobject.h"
 
 namespace ECS {
 
-class Entity : public IEntity {
+class Entity : public IEntity, public PyCXXObject<Entity> {
 public:
+  DECLEAR_PYCXX_OBJECT_TYPE(Entity);
   Entity();
   ~Entity();
 
-  uint64_t GetID() const override { return _id; }
+  uint64_t GetID() override { return _id; }
   EntityType GetType() const override { return _type; }
 
   bool AddComponent(Component* comp);

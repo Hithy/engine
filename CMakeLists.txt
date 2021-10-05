@@ -31,13 +31,27 @@ else()
   find_package(assimp REQUIRED)
 endif()
 
+add_subdirectory("3rd/Python-3.9.7")
+target_include_directories(engine PUBLIC
+  "3rd/Python-3.9.7/Include"
+  )
+if (UNIX)
+  target_include_directories(engine PUBLIC
+      "3rd/Python-3.9.7/Linux"
+    )
+elseif(WIN32)
+  target_include_directories(engine PUBLIC
+      "3rd/Python-3.9.7/PC"
+    )
+endif()
+
 target_include_directories(engine PUBLIC "src")
 target_include_directories(engine PUBLIC "3rd/include")
 
 if (UNIX)
   target_link_libraries(engine dl)
 endif(UNIX)
-target_link_libraries(engine glfw assimp)
+target_link_libraries(engine glfw assimp pythoncore)
 
 add_custom_target(run
   COMMAND engine

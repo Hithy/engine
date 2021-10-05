@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "scene.h"
+#include "pybind/pyobject.h"
 
 struct GLFWwindow;
 
@@ -48,14 +49,20 @@ struct WorldContext {
   InputContext input;
 };
 
-class World {
+class World : public PyCXXObject<World> {
 public:
+  DECLEAR_PYCXX_OBJECT_TYPE(World);
+
   static World &GetInstance() {
     static World inst;
     return inst;
   }
 
   void AddScene(Scene* scn);
+
+  Scene* GetActiveScene() {
+    return _scenes[0];
+  }
 
   void Init();
   void Run();
@@ -64,6 +71,7 @@ public:
 
 private:
   World();
+  void initPython();
   void initGL();
   void initPhysx();
 

@@ -6,12 +6,14 @@
 #include "component.h"
 #include "entity.h"
 #include "system_scene.h"
+#include "pybind/pyobject.h"
 
 class Shader;
 
 namespace ECS {
-class Scene {
+class Scene : public PyCXXObject<Scene> {
 public:
+  DECLEAR_PYCXX_OBJECT_TYPE(Scene);
   Scene();
   virtual ~Scene();
 
@@ -28,6 +30,9 @@ public:
 
   bool AddEntity(IEntity *ent);
   bool DelEntity(uint64_t ent_id);
+
+  decltype(auto) GetEntityCount();
+  std::vector<uint64_t> GetEntityIds();
 
   std::vector<IEntity *> GetEntitiesByType(ComponentType type);
 

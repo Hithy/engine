@@ -1,4 +1,5 @@
 #include "entity_base.h"
+#include "pybind/pybind.h"
 
 namespace ECS {
 
@@ -47,5 +48,14 @@ std::vector<ComponentType> Entity::GetComponentTypes() {
 
   return res;
 }
+
+BIND_CLS_FUNC_DEFINE(Entity, GetID)
+
+static PyMethodDef type_methods[] = {
+    {"get_id", BIND_CLS_FUNC_NAME(Entity, GetID), METH_NOARGS, NULL},
+    {0, nullptr, 0, 0},
+};
+
+DEFINE_PYCXX_OBJECT_TYPE_BASE(Entity, "Entity", type_methods)
 
 } // namespace ECS

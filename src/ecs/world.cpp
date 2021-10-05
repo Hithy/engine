@@ -7,6 +7,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "python_ecs.h"
+#include "pybind/pybind.h"
+
 namespace ECS {
 
 static void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
@@ -39,6 +42,11 @@ World::World() {
   ctx.title = "hello_engine";
   ctx.window_width = 1920;
   ctx.window_height = 1080;
+}
+
+void World::initPython()
+{
+  InitPython();
 }
 
 void GLAPIENTRY
@@ -134,6 +142,7 @@ void World::AddScene(Scene* scn)
 }
 
 void World::Init() {
+  initPython();
   initGL();
   initPhysx();
 }
@@ -144,9 +153,35 @@ void World::Run() {
 
     logic();
 
+    TickPython();
+
     render();
 
     curr_frame++;
   }
 }
+
+BIND_CLS_FUNC_DEFINE(World, GetActiveScene)
+
+static PyMethodDef type_methods[] = {
+  {"get_active_scene", BIND_CLS_FUNC_NAME(World, GetActiveScene), METH_NOARGS, 0},
+  {0, nullptr, 0, 0},
+};
+
+PyTypeObject* World::GetPyType() {
+  static PyTypeObject* new_type = nullptr;
+  if (new_type) {
+    return new_type;
+  }
+  new_type = new PyTypeObject
+  {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "World",
+    sizeof(PyBindObject)
+  };
+  new_type->tp_dealloc = pybind__dealloc__;
+  new_type->tp_methods = type_methods;
+  return new_type;
+}
+
 } // namespace ECS

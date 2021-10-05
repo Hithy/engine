@@ -12,7 +12,7 @@ class IEntity {
 public:
   virtual EntityType GetType() const = 0;
   virtual ~IEntity(){};
-  virtual uint64_t GetID() const = 0;
+  virtual uint64_t GetID() = 0;
 };
 
 } // namespace ECS

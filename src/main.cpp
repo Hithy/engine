@@ -18,6 +18,7 @@ ECS::Entity *CreateModelObj(const char *path, const glm::vec3 &pos, const glm::v
   init_trans = glm::scale(init_trans, scale);
   model_ent->AddComponent(new ECS::ComponentTransform(init_trans));
   model_ent->AddComponent(new ECS::ComponentModel(path));
+  model_ent->SetRef(0);
 
   return model_ent;
 }
@@ -40,6 +41,8 @@ ECS::Entity* CreateSunLight(const glm::vec3& pos) {
   comp_light->SetLightParam(light_param);
 
   ent->AddComponent(comp_light);
+
+  ent->SetRef(0);
   return ent;
 }
 
@@ -61,6 +64,8 @@ ECS::Entity *CreatePointLight(const glm::vec3 &pos) {
   comp_light->SetLightParam(light_param);
   
   ent->AddComponent(comp_light);
+
+  ent->SetRef(0);
   return ent;
 }
 
@@ -81,6 +86,8 @@ ECS::Entity* CreateDirLight(const glm::vec3& forward) {
   comp_light->SetLightParam(light_param);
 
   ent->AddComponent(comp_light);
+
+  ent->SetRef(0);
   return ent;
 }
 
@@ -101,6 +108,8 @@ ECS::Entity* CreateAmbientLight(const glm::vec3& forward) {
   comp_light->SetLightParam(light_param);
 
   ent->AddComponent(comp_light);
+
+  ent->SetRef(0);
   return ent;
 }
 
@@ -108,6 +117,8 @@ ECS::Entity* CreateCamera() {
   auto ent = new ECS::Entity();
   ent->AddComponent(new ECS::ComponentCamera());
   ent->AddComponent(new ECS::ComponentTransform());
+
+  ent->SetRef(0);
   return ent;
 }
 
@@ -145,9 +156,9 @@ int main() {
   scene_obj->AddEntity(CreatePointLight(glm::vec3(0.0f, 0.0f, -18.0f)));
   scene_obj->AddEntity(CreateSunLight(glm::vec3(0.0f, 5.0f, -35.0f)));
   // scene_obj->AddEntity(CreatePointLight(glm::vec3(5.0f, 5.0f, -20.0f)));
-  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\sgb\\untitled.obj",
+  /*scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\sgb\\untitled.obj",
                                    glm::vec3(0.0f, 0.0f, -15.0f),
-                                   glm::vec3(0.01f, 0.01f, 0.01f)));
+                                   glm::vec3(0.01f, 0.01f, 0.01f)));*/
 
   scene_obj->SetActiveCamera(cam_ent->GetID());
 

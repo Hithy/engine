@@ -22,6 +22,8 @@
 
 #include "ecs/utils.h"
 
+#include "pybind/pybind.h"
+
 namespace ECS {
 
 Scene::Scene() : _active_camera(0), _global_shader(nullptr), _shadow_fbo(0), _enable_hdr(false), _enable_gamma(false) {
@@ -104,6 +106,7 @@ bool Scene::AddEntity(IEntity *ent) {
   _entities[ent_id] = ent;
 
   auto base_ent = dynamic_cast<Entity *>(ent);
+  base_ent->AddRef();
   if (base_ent) {
     auto comp_types = base_ent->GetComponentTypes();
     for (auto const &comp_type : comp_types) {
@@ -125,9 +128,24 @@ bool Scene::DelEntity(uint64_t ent_id) {
   for (auto &tag_list : _entity_tag_list) {
     tag_list.erase(ent_id);
   }
-  delete ent;
+  auto base_ent = dynamic_cast<Entity*>(ent);
+  base_ent->DecRef();
 
   return true;
+}
+
+decltype(auto) Scene::GetEntityCount()
+{
+  return _entities.size();
+}
+
+std::vector<uint64_t> Scene::GetEntityIds()
+{
+  std::vector<uint64_t> res;
+  for (const auto& ent_itr : _entities) {
+    res.push_back(ent_itr.first);
+  }
+  return res;
 }
 
 void Scene::Logic() {
@@ -495,4 +513,15 @@ std::vector<IEntity *> Scene::GetEntitiesByType(ComponentType type) {
 
   return res;
 }
+
+BIND_CLS_FUNC_DEFINE(Scene, GetEntityCount)
+BIND_CLS_FUNC_DEFINE(Scene, GetEntityIds)
+
+static PyMethodDef type_methods[] = {
+  {"get_entity_count", BIND_CLS_FUNC_NAME(Scene, GetEntityCount), METH_NOARGS, 0},
+  {"get_entity_list", BIND_CLS_FUNC_NAME(Scene, GetEntityIds), METH_NOARGS, 0},
+  {0, nullptr, 0, 0},
+};
+
+DEFINE_PYCXX_OBJECT_TYPE_BASE(Scene, "Scene", type_methods)
 } // namespace ECS
