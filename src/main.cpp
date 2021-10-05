@@ -113,6 +113,16 @@ ECS::Entity* CreateAmbientLight(const glm::vec3& forward) {
   return ent;
 }
 
+#ifdef WIN32
+const char floor_path[] = "C:\\Users\\huyao\\Documents\\Models\\floor\\untitled.obj";
+const char wall_path[] = "C:\\Users\\huyao\\Documents\\Models\\wall\\untitled.obj";
+const char backpack_path[] = "C:\\Users\\huyao\\Documents\\Models\\sgb\\untitled.obj"
+#else
+const char floor_path[] = "/home/yao/Documents/floor/untitled.obj";
+const char wall_path[] = "/home/yao/Documents/floor/untitled.obj";
+const char backpack_path[] = "/home/yao/Documents/sgb/untitled.obj";
+#endif
+
 ECS::Entity* CreateCamera() {
   auto ent = new ECS::Entity();
   ent->AddComponent(new ECS::ComponentCamera());
@@ -136,17 +146,17 @@ int main() {
   auto cam_ent = CreateCamera();
   scene_obj->AddEntity(cam_ent);
   // floor
-  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\floor\\untitled.obj",
+  scene_obj->AddEntity(CreateModelObj(floor_path,
     glm::vec3(0.0f, -3.0f, 0.0f),
     glm::vec3(1.0f, 1.0f, 1.0f)));
 
-  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\wall\\untitled.obj",
-    glm::vec3(5.0f, 0.0f, -15.0f),
-    glm::vec3(1.0f, 2.0f, 4.0f)));
+  // scene_obj->AddEntity(CreateModelObj(wall_path,
+  //   glm::vec3(5.0f, 0.0f, -15.0f),
+  //   glm::vec3(1.0f, 2.0f, 4.0f)));
 
-  scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\wall\\untitled.obj",
-    glm::vec3(-5.0f, 0.0f, -15.0f),
-    glm::vec3(1.0f, 2.0f, 4.0f)));
+  // scene_obj->AddEntity(CreateModelObj(wall_path,
+  //   glm::vec3(-5.0f, 0.0f, -15.0f),
+  //   glm::vec3(1.0f, 2.0f, 4.0f)));
 
   scene_obj->AddEntity(CreateAmbientLight(glm::vec3(4.0f, -4.0f, 0.0f)));
 
@@ -156,9 +166,9 @@ int main() {
   scene_obj->AddEntity(CreatePointLight(glm::vec3(0.0f, 0.0f, -18.0f)));
   scene_obj->AddEntity(CreateSunLight(glm::vec3(0.0f, 5.0f, -35.0f)));
   // scene_obj->AddEntity(CreatePointLight(glm::vec3(5.0f, 5.0f, -20.0f)));
-  /*scene_obj->AddEntity(CreateModelObj("C:\\Users\\huyao\\Documents\\Models\\sgb\\untitled.obj",
+  scene_obj->AddEntity(CreateModelObj(backpack_path,
                                    glm::vec3(0.0f, 0.0f, -15.0f),
-                                   glm::vec3(0.01f, 0.01f, 0.01f)));*/
+                                   glm::vec3(0.01f, 0.01f, 0.01f)));
 
   scene_obj->SetActiveCamera(cam_ent->GetID());
 
