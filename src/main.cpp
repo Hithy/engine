@@ -113,15 +113,9 @@ ECS::Entity* CreateAmbientLight(const glm::vec3& forward) {
   return ent;
 }
 
-#ifdef WIN32
-const char floor_path[] = "C:\\Users\\huyao\\Documents\\Models\\floor\\untitled.obj";
-const char wall_path[] = "C:\\Users\\huyao\\Documents\\Models\\wall\\untitled.obj";
-const char backpack_path[] = "C:\\Users\\huyao\\Documents\\Models\\sgb\\untitled.obj";
-#else
-const char floor_path[] = "/home/yao/Documents/floor/untitled.obj";
-const char wall_path[] = "/home/yao/Documents/wall/untitled.obj";
-const char backpack_path[] = "/home/yao/Documents/sgb/untitled.obj";
-#endif
+const char floor_path[] = "resource/models/floor/floor.obj";
+const char wall_path[] = "resource/models/wall/wall.obj";
+const char backpack_path[] = "resource/models/backpack/backpack.obj";
 
 ECS::Entity* CreateCamera() {
   auto ent = new ECS::Entity();

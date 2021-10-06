@@ -15,8 +15,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-Model::Model(const char* path)
+Model::Model(const char* path) : _directory(path)
 {
+  int idx = _directory.size() - 1;
+  while (idx > 0 && path[idx] != '/' && path[idx] != '\\') {
+    idx--;
+  }
+  _directory = _directory.substr(0, idx + 1);
   LoadModel(path);
 }
 
@@ -85,9 +90,10 @@ static unsigned int GenTexture(const char* path) {
   return texture;
 }
 
-static std::vector<Texture> 
-loadMaterialTextures(aiMaterial* mat, aiTextureType type, TextureType texture_type)
-{
+static std::vector<Texture> loadMaterialTextures(const std::string &base_path,
+                                                 aiMaterial *mat,
+                                                 aiTextureType type,
+                                                 TextureType texture_type) {
   static std::unordered_map<std::string, Texture> texture_cache;
   std::vector<Texture> textures;
 
@@ -103,7 +109,7 @@ loadMaterialTextures(aiMaterial* mat, aiTextureType type, TextureType texture_ty
     }
 
     Texture texture;
-    texture.id = GenTexture(path.C_Str());
+    texture.id = GenTexture((base_path + path.C_Str()).c_str());
     texture.type = texture_type;
     textures.push_back(texture);
 
@@ -159,13 +165,16 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
   auto material = scene->mMaterials[mesh->mMaterialIndex];
 
   // 1. diffuse maps
-  std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType_Diffuse);
+  std::vector<Texture> diffuseMaps = loadMaterialTextures(
+      _directory, material, aiTextureType_DIFFUSE, TextureType_Diffuse);
   textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
   // 2. specular maps
-  std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, TextureType_Specular);
+  std::vector<Texture> specularMaps = loadMaterialTextures(
+      _directory, material, aiTextureType_SPECULAR, TextureType_Specular);
   textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
   // 3. normal maps
-  std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, TextureType_Normal);
+  std::vector<Texture> normalMaps = loadMaterialTextures(
+      _directory, material, aiTextureType_HEIGHT, TextureType_Normal);
   textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
   return Mesh(vertices, indices, textures);

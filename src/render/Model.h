@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include "Mesh.h"
 
 class Shader;
@@ -21,7 +22,6 @@ private:
 
 private:
   std::vector<Mesh> _meshes;
-
-
+  std::string _directory;
 };
 
