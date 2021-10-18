@@ -8,7 +8,7 @@ struct PyBindObject;
 
 struct PyBindObject {
   PyObject_HEAD
-    BindObject* obj;
+  BindObject* obj;
 };
 
 class BindObject {
@@ -30,25 +30,27 @@ public:
   PyBindObject* GetPyObj() { return _pyobj; }
   void SetPyObj(PyBindObject* obj) { _pyobj = obj; }
 
+  virtual PyTypeObject* GetRealType() = 0;
+
 private:
   PyBindObject* _pyobj;
   int _ref_count;
 };
 
 template<typename T>
-class PyCXXObject : public BindObject {
+class PyCXXObject {
 public:
-  static PyObject* boxing(PyCXXObject<T>& cobj) {
-    auto pyobj = cobj.GetPyObj();
+  static PyObject* boxing(BindObject* cobj) {
+    auto pyobj = cobj->GetPyObj();
     if (pyobj) {
       Py_INCREF(pyobj);
       return (PyObject *)pyobj;
     }
 
-    pyobj = PyObject_New(PyBindObject, T::GetPyType());
-    pyobj->obj = &cobj;
-    cobj.SetPyObj(pyobj);
-    cobj.AddRef();
+    pyobj = PyObject_New(PyBindObject, cobj->GetRealType());
+    pyobj->obj = cobj;
+    cobj->SetPyObj(pyobj);
+    cobj->AddRef();
     return (PyObject*)pyobj;
   }
 
@@ -69,7 +71,11 @@ static PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* 
   return new_obj;
 }
 
-#define DECLEAR_PYCXX_OBJECT_TYPE(cls) static PyTypeObject *GetPyType()
+#define DECLEAR_PYCXX_OBJECT_TYPE(cls) \
+  static PyTypeObject *GetPyType(); \
+  virtual PyTypeObject *GetRealType() { \
+    return GetPyType(); \
+  }
 
 #define DEFINE_PYCXX_OBJECT_TYPE_BASE(cls, name, methods)                      \
   PyTypeObject *cls::GetPyType() {                                             \
@@ -96,6 +102,21 @@ static PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* 
                                 sizeof(PyBindObject)};                         \
     new_type->tp_dealloc = pybind__dealloc__;                                  \
     new_type->tp_new = pybind__new__<cls>;                                     \
+    new_type->tp_methods = methods;                                            \
+    new_type->tp_flags |= Py_TPFLAGS_BASETYPE;                                 \
+    new_type->tp_base = base::GetPyType();                                     \
+    return new_type;                                                           \
+  }
+
+#define DEFINE_PYCXX_OBJECT_TYPE_ENGINE(base, cls, name, methods)              \
+  PyTypeObject *cls::GetPyType() {                                             \
+    static PyTypeObject *new_type = nullptr;                                   \
+    if (new_type) {                                                            \
+      return new_type;                                                         \
+    }                                                                          \
+    new_type = new PyTypeObject{PyVarObject_HEAD_INIT(NULL, 0) name,           \
+                                sizeof(PyBindObject)};                         \
+    new_type->tp_dealloc = pybind__dealloc__;                                  \
     new_type->tp_methods = methods;                                            \
     new_type->tp_flags |= Py_TPFLAGS_BASETYPE;                                 \
     new_type->tp_base = base::GetPyType();                                     \

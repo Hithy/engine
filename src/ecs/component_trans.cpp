@@ -3,6 +3,8 @@
 #include "glm/gtx/quaternion.hpp"
 #include <glm/gtx/matrix_decompose.hpp>
 
+#include "pybind/pybind.h"
+
 namespace ECS {
 glm::mat4 ComponentTransform::GetTransform() const {
   auto trans_mat = glm::translate(glm::mat4(1.0f), _translation);
@@ -25,5 +27,22 @@ bool ComponentTransform::SetTransform(glm::mat4 trans_mat) {
   glm::vec4 perspective;
   return glm::decompose(trans_mat, _scale, _rotation, _translation, skew,
                         perspective);
+  using type_new = decltype(&ComponentTransform::GetPosition);
+  using ttt_type = std::remove_const_t<type_new>;
 }
+
+BIND_CLS_FUNC_DEFINE(ComponentTransform, SetPosition)
+BIND_CLS_FUNC_DEFINE(ComponentTransform, GetPosition)
+BIND_CLS_FUNC_DEFINE(ComponentTransform, SetScale)
+BIND_CLS_FUNC_DEFINE(ComponentTransform, GetScale)
+
+static PyMethodDef type_methods[] = {
+  {"SetPosition", BIND_CLS_FUNC_NAME(ComponentTransform, SetPosition), METH_VARARGS, 0},
+  {"GetPosition", BIND_CLS_FUNC_NAME(ComponentTransform, GetPosition), METH_NOARGS, 0},
+  {"SetScale", BIND_CLS_FUNC_NAME(ComponentTransform, SetScale), METH_VARARGS, 0},
+  {"GetScale", BIND_CLS_FUNC_NAME(ComponentTransform, GetScale), METH_NOARGS, 0},
+  {0, nullptr, 0, 0},
+};
+
+DEFINE_PYCXX_OBJECT_TYPE_ENGINE(Component, ComponentTransform, "ComponentTransform", type_methods)
 } // namespace ECS

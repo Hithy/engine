@@ -3,25 +3,29 @@
 #include <string>
 #include "Mesh.h"
 
-class Shader;
 struct aiNode;
 struct aiMesh;
 struct aiScene;
 
-class Model
-{
-public:
-  Model(const char* path);
 
-  void Draw(Shader* shader);
+namespace render {
+  class Shader;
 
-private:
-  void LoadModel(const char* path);
-  void ProcessNode(aiNode* node, const aiScene* scene);
-  Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
+  class Model
+  {
+  public:
+    Model(const char* path);
 
-private:
-  std::vector<Mesh> _meshes;
-  std::string _directory;
-};
+    void Draw(Shader* shader);
 
+  private:
+    void LoadModel(const char* path);
+    void ProcessNode(aiNode* node, const aiScene* scene);
+    Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
+
+  private:
+    std::vector<Mesh> _meshes;
+    std::string _directory;
+  };
+
+}

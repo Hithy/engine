@@ -9,11 +9,11 @@ void SystemInput::Tick() {
   auto& input = world.ctx.input;
 
   if (input.KeyToggled['H'] && input.KeyStatus['H'] == GLFW_PRESS) {
-    _scene->ToggleHDR();
+    //_scene->ToggleHDR();
   }
 
   if (input.KeyToggled['G'] && input.KeyStatus['G'] == GLFW_PRESS) {
-    _scene->ToggleGamma();
+    //_scene->ToggleGamma();
   }
 }
 

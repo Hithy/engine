@@ -6,9 +6,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 #include "python_ecs.h"
 #include "pybind/pybind.h"
+
+#include "render/render.h"
+#include "render/Model.h"
+#include "render/resource_mgr.h"
 
 namespace ECS {
 
@@ -88,12 +93,17 @@ void World::initGL() {
   glfwSetScrollCallback(_window, scroll_callback);
 
   glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
+  // glEnable(GL_CULL_FACE);
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, 0);
 }
 
 void World::initPhysx() {}
+
+void World::initRender()
+{
+  render::Render::GetInstance().Init();
+}
 
 void World::updateInput() {
   if (glfwGetKey(_window, GLFW_KEY_Q) == GLFW_PRESS) {
@@ -124,12 +134,12 @@ void World::logic() {
 }
 
 void World::render() {
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, ctx.window_width, ctx.window_height);
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  for (auto const &scn : _scenes) {
-    scn->Render();
-  }
+  render::Render::GetInstance().DoRender();
 
   glfwSwapBuffers(_window);
   glfwPollEvents();
@@ -145,6 +155,7 @@ void World::Init() {
   initPython();
   initGL();
   initPhysx();
+  initRender();
 }
 
 void World::Run() {

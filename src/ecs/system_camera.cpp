@@ -1,3 +1,4 @@
+#include <chrono>
 #include <GLFW/glfw3.h>
 
 #include "system_camera.h"
@@ -8,6 +9,11 @@
 
 namespace ECS {
 void SystemCamera::Tick() {
+  static auto last_time = std::chrono::steady_clock::now();
+  auto now_time = std::chrono::steady_clock::now();
+  auto delta_time = std::chrono::duration<double>(now_time - last_time);
+  last_time = now_time;
+
   auto &world = World::GetInstance();
 
   auto& input = world.ctx.input;
@@ -31,7 +37,7 @@ void SystemCamera::Tick() {
     comp_cam->SetPitch(comp_cam->GetPitch() - delta_y);
 
     // update pos
-    const float camera_speed = 0.05f;
+    const float camera_speed = delta_time.count() * 10.0f;
     auto view = comp_cam->GetView();
     view = glm::inverse(view);
 

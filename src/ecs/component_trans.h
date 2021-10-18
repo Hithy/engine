@@ -7,10 +7,13 @@
 namespace ECS {
 class ComponentTransform : public Component {
 public:
+  DECLEAR_PYCXX_OBJECT_TYPE(ComponentTransform);
   ComponentTransform()
       : Component(ComponentType_Transform), _scale(glm::vec3(1.0f, 1.0f, 1.0f)),
         _rotation(glm::quat(0.0f, 0.0f, 0.0f, 1.0f)),
-        _translation(glm::vec3(0.0f, 0.0f, 0.0f)){};
+        _translation(glm::vec3(0.0f, 0.0f, 0.0f)){
+    SetTransform(glm::mat4(1.0f));
+  };
 
   ComponentTransform(glm::mat4 trans)
       : Component(ComponentType_Transform){

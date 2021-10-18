@@ -4,6 +4,12 @@
 #include "ecs/entity_base.h"
 #include "ecs/world.h"
 #include "ecs/scene.h"
+#include "ecs/component_camera.h"
+#include "ecs/component_model.h"
+#include "ecs/component_trans.h"
+#include "ecs/component_base.h"
+
+#include "ecs/pyfunc.h"
 
 #include <Python.h>
 #include <vector>
@@ -115,6 +121,11 @@ void InitPython() {
   PyModule_AddType(new_module, Entity::GetPyType());
   PyModule_AddType(new_module, Scene::GetPyType());
   PyModule_AddType(new_module, World::GetPyType());
+  PyModule_AddType(new_module, Component::GetPyType());
+  PyModule_AddType(new_module, ComponentModel::GetPyType());
+  PyModule_AddType(new_module, ComponentTransform::GetPyType());
+
+  ECS::InitFuncModule(new_module);
 
   PyRun_SimpleString(
     "import script_main\n"

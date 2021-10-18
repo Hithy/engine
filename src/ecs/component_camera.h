@@ -7,6 +7,7 @@
 namespace ECS {
 class ComponentCamera : public Component {
 public:
+  DECLEAR_PYCXX_OBJECT_TYPE(ComponentCamera);
   ComponentCamera()
       : Component(ComponentType_Camera), _fov(60.0f), _pitch(0.0f),
         _yaw(0.0f){};

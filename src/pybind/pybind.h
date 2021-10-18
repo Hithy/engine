@@ -161,6 +161,37 @@ auto wrap_func(Res (Cls::*fn)(Args...)) {
   return func;
 }
 
+template <typename Res, typename Cls, typename ...Args, int... S>
+auto wrap_func_inner(Res(Cls::* fn)(Args...) const, seq<S...>) {
+  auto res = [=](PyObject* self, PyObject* args) -> PyObject* {
+    ParamList<Args...> params;
+    char param_build[sizeof...(S) + 1] = { 0 };
+    BuildParamTypes(param_build, &params); // TODO: constexpr
+
+    if (sizeof...(S) > 0) {
+      if (!PyArg_ParseTuple(args, param_build, ParamGet<S>::get_ptr(&params)...)) {
+        return NULL;
+      }
+    }
+
+    decltype(auto) c_obj = detail::unboxing<Cls*>(self);
+    decltype(auto) res = (c_obj->*fn)(ParamGet<S>::get(&params)...);
+
+    return detail::boxing(res);
+  };
+
+  return res;
+}
+
+template <typename Res, typename Cls, typename ...Args>
+auto wrap_func(Res(Cls::* fn)(Args...) const) {
+  typename gen_seq<sizeof...(Args)>::type param_len;
+
+  auto func = wrap_func_inner(fn, param_len);
+
+  return func;
+}
+
 template <typename Cls, typename ...Args, int... S>
 auto wrap_func_inner(void (Cls::* fn)(Args...), seq<S...>) {
   auto res = [=](PyObject* self, PyObject* args) -> PyObject* {
@@ -185,6 +216,37 @@ auto wrap_func_inner(void (Cls::* fn)(Args...), seq<S...>) {
 
 template <typename Cls, typename ...Args>
 auto wrap_func(void (Cls::* fn)(Args...)) {
+  typename gen_seq<sizeof...(Args)>::type param_len;
+
+  auto func = wrap_func_inner(fn, param_len);
+
+  return func;
+}
+
+template <typename Cls, typename ...Args, int... S>
+auto wrap_func_inner(void (Cls::* fn)(Args...) const, seq<S...>) {
+  auto res = [=](PyObject* self, PyObject* args) -> PyObject* {
+    ParamList<Args...> params;
+    char param_build[sizeof...(S) + 1] = { 0 };
+    BuildParamTypes(param_build, &params); // TODO: constexpr
+
+    if (sizeof...(S) > 0) {
+      if (!PyArg_ParseTuple(args, param_build, ParamGet<S>::get_ptr(&params)...)) {
+        return NULL;
+      }
+    }
+
+    decltype(auto) c_obj = detail::unboxing<Cls*>(self);
+    (c_obj->*fn)(ParamGet<S>::get(&params)...);
+
+    Py_RETURN_NONE;
+  };
+
+  return res;
+}
+
+template <typename Cls, typename ...Args>
+auto wrap_func(void (Cls::* fn)(Args...) const) {
   typename gen_seq<sizeof...(Args)>::type param_len;
 
   auto func = wrap_func_inner(fn, param_len);

@@ -27,4 +27,6 @@ glm::mat4 ComponentCamera::GetView() {
 
   return rotate_mat * glm::mat4(1.0f);
 }
+
+DEFINE_PYCXX_OBJECT_TYPE_ENGINE(Component, ComponentCamera, "ComponentCamera", nullptr)
 } // namespace ECS

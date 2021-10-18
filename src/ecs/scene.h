@@ -4,52 +4,34 @@
 #include <vector>
 
 #include "component.h"
-#include "entity.h"
+#include "entity_base.h"
 #include "system_scene.h"
 #include "pybind/pyobject.h"
 
-class Shader;
-
 namespace ECS {
-class Scene : public PyCXXObject<Scene> {
+class Scene : public BindObject {
 public:
   DECLEAR_PYCXX_OBJECT_TYPE(Scene);
   Scene();
   virtual ~Scene();
 
-  void ToggleHDR();
-  void ToggleGamma();
-
   void OnAddedToWorld();
-
   void Logic();
-  void Render();
 
   bool AddSystem(System *sys);
   bool DelSystem(SystemType sys_type);
 
-  bool AddEntity(IEntity *ent);
+  bool AddEntity(Entity *ent);
   bool DelEntity(uint64_t ent_id);
 
   decltype(auto) GetEntityCount();
   std::vector<uint64_t> GetEntityIds();
 
   std::vector<IEntity *> GetEntitiesByType(ComponentType type);
+  Entity* GetEntitiesById(uint64_t ent_id);
 
   void SetActiveCamera(uint64_t ent_id) { _active_camera = ent_id; }
-
-private:
-  void initHDR();
-
-private:
-  void updateShaderVP();
-  void updateShaderLight();
-
-  void drawObjects(Shader* shader);
-
-  void renderScene();
-  void renderShadow();
-  void renderQuad();
+  uint64_t GetActiveCamera() { return _active_camera; }
 
 private:
   // id -> entity
@@ -59,15 +41,6 @@ private:
   std::unordered_map<SystemType, System *> _systems;
 
   uint64_t _active_camera;
-  Shader *_global_shader;
-
-  bool _enable_hdr;
-  bool _enable_gamma;
-
-  unsigned int _shadow_fbo;
-  unsigned int _hdr_fbo;
-  unsigned int _hdr_vao;
-  unsigned int _post_texture;
-  unsigned int _post_depth;
+  
 };
 } // namespace ECS

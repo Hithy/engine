@@ -23,4 +23,6 @@ namespace ECS {
     }
     _shadow_texture = texture;
   }
+
+  DEFINE_PYCXX_OBJECT_TYPE_ENGINE(Component, ComponentLight, "ComponentLight", nullptr)
 }

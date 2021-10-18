@@ -12,7 +12,7 @@ Entity::Entity() : _type(EntityType_Base), _id(GenEntityID()) {}
 
 Entity::~Entity() {
   for (auto const &comp : _components) {
-    delete comp.second;
+    comp.second->DecRef();
   }
   _components.clear();
 }
@@ -27,12 +27,13 @@ bool Entity::AddComponent(Component *comp) {
   }
 
   _components[comp_type] = comp;
+  comp->AddRef();
   comp->SetEntity(this);
   return true;
 }
 
-Component *Entity::GetComponent(ComponentType type) {
-  auto comp_itr = _components.find(type);
+Component *Entity::GetComponent(int type) {
+  auto comp_itr = _components.find(static_cast<ComponentType>(type));
   if (comp_itr != _components.end()) {
     return comp_itr->second;
   }
@@ -50,9 +51,13 @@ std::vector<ComponentType> Entity::GetComponentTypes() {
 }
 
 BIND_CLS_FUNC_DEFINE(Entity, GetID)
+BIND_CLS_FUNC_DEFINE(Entity, AddComponent)
+BIND_CLS_FUNC_DEFINE(Entity, GetComponent)
 
 static PyMethodDef type_methods[] = {
     {"get_id", BIND_CLS_FUNC_NAME(Entity, GetID), METH_NOARGS, NULL},
+    {"AddComponent", BIND_CLS_FUNC_NAME(Entity, AddComponent), METH_VARARGS, NULL},
+    {"GetComponent", BIND_CLS_FUNC_NAME(Entity, GetComponent), METH_VARARGS, NULL},
     {0, nullptr, 0, 0},
 };
 

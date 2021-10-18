@@ -9,7 +9,7 @@
 
 namespace ECS {
 
-class Entity : public IEntity, public PyCXXObject<Entity> {
+class Entity : public IEntity, public BindObject {
 public:
   DECLEAR_PYCXX_OBJECT_TYPE(Entity);
   Entity();
@@ -19,7 +19,7 @@ public:
   EntityType GetType() const override { return _type; }
 
   bool AddComponent(Component* comp);
-  Component* GetComponent(ComponentType type);
+  Component* GetComponent(int type);
 
   std::vector<ComponentType> GetComponentTypes();
 

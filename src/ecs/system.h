@@ -7,6 +7,7 @@ enum SystemType {
   SystemType_Camera,
   SystemType_Model,
   SystemType_Input,
+  SystemType_SyncRender,
 };
 
 class ISystem {

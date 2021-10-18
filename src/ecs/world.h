@@ -49,7 +49,7 @@ struct WorldContext {
   InputContext input;
 };
 
-class World : public PyCXXObject<World> {
+class World : public BindObject {
 public:
   DECLEAR_PYCXX_OBJECT_TYPE(World);
 
@@ -74,6 +74,7 @@ private:
   void initPython();
   void initGL();
   void initPhysx();
+  void initRender();
 
   void updateInput();
   void logic();

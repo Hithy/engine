@@ -1,3 +1,4 @@
+#pragma once
 #include "system_scene.h"
 
 namespace ECS {

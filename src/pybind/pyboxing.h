@@ -46,7 +46,7 @@ template <typename U> struct vector_box_struct {
 };
 
 template <typename U> struct obj_box_struct {
-  static PyObject *boxing(U &obj) { return PyCXXObject<U>::boxing(obj); }
+  static PyObject *boxing(U &obj) { return PyCXXObject<U>::boxing(&obj); }
 
   static U &unboxing(PyObject *obj) { return PyCXXObject<U>::unboxing(obj); }
 };
@@ -83,7 +83,7 @@ template <typename T> PyObject *boxing(T &&obj) {
       std::is_same_v<type_nc, type_ncp>,
       std::conditional_t<
           // check bind obj
-          std::is_base_of_v<PyCXXObject<type_ncrp>, type_ncrp>,
+          std::is_base_of_v<BindObject, type_ncrp>,
           obj_box_struct<type_ncrp>,
           std::conditional_t<
               // check vector
@@ -107,7 +107,7 @@ template <typename T> decltype(auto) unboxing(PyObject *obj) {
       std::is_same_v<type_nc, type_ncp>,
       std::conditional_t<
           // check bind obj
-          std::is_base_of_v<PyCXXObject<type_ncrp>, type_ncrp>,
+          std::is_base_of_v<BindObject, type_ncrp>,
           obj_box_struct<type_ncrp>,
           std::conditional_t<
               // check vector
@@ -117,6 +117,14 @@ template <typename T> decltype(auto) unboxing(PyObject *obj) {
       box_type;
 
   return box_type::unboxing(obj);
+}
+
+template <> inline PyObject* boxing<const char*>(const char*&& obj) {
+  return base_box_struct<const char*>::boxing(obj);
+}
+
+template <> inline decltype(auto) unboxing<const char*>(PyObject* obj) {
+  return base_box_struct<const char*>::unboxing(obj);
 }
 
 } // namespace detail
