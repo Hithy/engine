@@ -8,6 +8,8 @@ enum SystemType {
   SystemType_Model,
   SystemType_Input,
   SystemType_SyncRender,
+
+  SystemType_MAX,
 };
 
 class ISystem {

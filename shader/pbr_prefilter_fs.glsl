@@ -33,7 +33,7 @@ void main() {
   uint sampleCount = 1024u;
   float totalWeight = 0.0;
   vec3 color = vec3(0.0);
-  for (uint i = 0; i < sampleCount; i++) {
+  for (uint i = 0u; i < sampleCount; i++) {
     vec2 Xi = Hammersley(i, sampleCount);
     vec3 H = ImportanceSampleGGX(Xi, N, roughness);
     vec3 L = normalize(2.0 * dot(V, H) * H - V);

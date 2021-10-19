@@ -119,6 +119,9 @@ template <typename T> decltype(auto) unboxing(PyObject *obj) {
   return box_type::unboxing(obj);
 }
 
+template<> PyObject* base_box_struct<const char *>::boxing(const char* obj);
+template<> const char* base_box_struct<const char*>::unboxing(PyObject* obj);
+
 template <> inline PyObject* boxing<const char*>(const char*&& obj) {
   return base_box_struct<const char*>::boxing(obj);
 }
@@ -126,5 +129,4 @@ template <> inline PyObject* boxing<const char*>(const char*&& obj) {
 template <> inline decltype(auto) unboxing<const char*>(PyObject* obj) {
   return base_box_struct<const char*>::unboxing(obj);
 }
-
 } // namespace detail

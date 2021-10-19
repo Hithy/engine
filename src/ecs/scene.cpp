@@ -133,8 +133,11 @@ std::vector<uint64_t> Scene::GetEntityIds()
 }
 
 void Scene::Logic() {
-  for (auto const &sys : _systems) {
-    sys.second->Tick();
+  for (int i = SystemType_Unknown + 1; i < SystemType_MAX; i++) {
+    auto idx = static_cast<SystemType>(i);
+    if (_systems.count(idx)) {
+      _systems[idx]->Tick();
+    }
   }
 }
 
