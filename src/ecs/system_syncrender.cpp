@@ -20,8 +20,8 @@ namespace ECS {
   {
     auto& render = render::Render::GetInstance();
 
-    render.SetPbrSkyBox("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr");
-    // render.SetPbrSkyBox("resource/images/hdr/newport_loft.hdr");
+    // render.SetPbrSkyBox("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr");
+    render.SetPbrSkyBox("resource/images/hdr/newport_loft.hdr");
     render.PrepareRender();
   }
   void SystemSyncRender::Stop()

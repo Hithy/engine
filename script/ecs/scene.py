@@ -2,9 +2,27 @@ import _engine
 # import numpy
 from ecs import rotate_system
 
+def createBall(material, pos):
+	comp_model = _engine.CreateComponentModel("resource/models/ball/ball.obj")
+	comp_model.SetAlbedoPath("resource/images/pbr/" + material + "/albedo.png")
+	comp_model.SetNormalPath("resource/images/pbr/" + material + "/normal.png")
+	comp_model.SetMetalicPath("resource/images/pbr/" + material + "/metallic.png")
+	comp_model.SetRouphnessPath("resource/images/pbr/" + material + "/roughness.png")
+	comp_model.SetAOPath("resource/images/pbr/" + material + "/ao.png")
+
+	comp_trans = _engine.CreateComponentTransform()
+	comp_trans.SetPosition(pos)
+	# comp_trans.SetScale([0.01, 0.01, 0.01])
+	# comp_trans.SetRotationEular([1.600, 4.660, 0.1])
+
+	ent = _engine.CreateEntity()
+	ent.AddComponent(comp_model)
+	ent.AddComponent(comp_trans)
+
+	return ent
+
 def createGun():
 	comp_model = _engine.CreateComponentModel("resource/models/ball/ball.obj")
-	comp_model.SetModelPath("resource/models/Cerberus_by_Andrew_Maximov/Cerberus_LP.FBX")
 	comp_model.SetAlbedoPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_A.tga")
 	comp_model.SetNormalPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_N.tga")
 	comp_model.SetMetalicPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_M.tga")
@@ -22,17 +40,24 @@ def createGun():
 
 	return ent
 
-def createBall():
-	comp_model = _engine.CreateComponentModel("resource/models/ball/ball.obj")
+def createBackpack():
+	comp_model = _engine.CreateComponentModel("resource/models/backpack/backpack.obj")
+	comp_model.SetAlbedoPath("resource/models/backpack/Scene_-_Root_baseColor.jpeg")
+	comp_model.SetNormalPath("resource/models/backpack/Scene_-_Root_normal.png")
+	comp_model.SetMetalicPath("resource/images/pbr/rusted_iron/metallic.png")
+	comp_model.SetRouphnessPath("resource/images/pbr/rusted_iron/roughness.png")
+	comp_model.SetAOPath("resource/images/pbr/rusted_iron/ao.png")
+
 	comp_trans = _engine.CreateComponentTransform()
-	comp_trans.SetPosition([-5.0, 0.0, -15.0])
+	comp_trans.SetPosition([5.0, 0.0, -15.0])
 	# comp_trans.SetScale([0.01, 0.01, 0.01])
+	# comp_trans.SetRotationEular([1.600, 4.660, 0.1])
 
-	backpack_ent = _engine.CreateEntity()
-	backpack_ent.AddComponent(comp_model)
-	backpack_ent.AddComponent(comp_trans)
+	ent = _engine.CreateEntity()
+	ent.AddComponent(comp_model)
+	ent.AddComponent(comp_trans)
 
-	return backpack_ent
+	return ent
 
 def CreateCamera():
 	comp_cam = _engine.ComponentCamera()
@@ -65,7 +90,12 @@ class PyScene(_engine.Scene):
 		self.SetActiveCamera(cam_ent.get_id())
 
 		# self.AddEntity(createGun())
-		self.AddEntity(createBall())
+		# self.AddEntity(createBackpack())
+		self.AddEntity(createBall("gold", [-8.0, 0.0, -15.0]))
+		self.AddEntity(createBall("grass", [-3.0, 0.0, -15.0]))
+		self.AddEntity(createBall("plastic", [2.0, 0.0, -15.0]))
+		self.AddEntity(createBall("rusted_iron", [7.0, 0.0, -15.0]))
+		
 
 	def add_system(self, sys):
 		super().AddSystem(sys)
