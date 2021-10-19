@@ -34,19 +34,22 @@ Scene::Scene() : _active_camera(0) {
 
 Scene::~Scene() {
   for (auto const &ent : _entities) {
-    delete ent.second;
+    auto base_ent = dynamic_cast<Entity*>(ent.second);
+    base_ent->DecRef();
   }
   _entities.clear();
   _entity_tag_list->clear();
 
   for (auto const &sys : _systems) {
-    delete sys.second;
+    sys.second->DecRef();
   }
   _systems.clear();
 }
 
 void Scene::OnAddedToWorld()
 {
+  AddRef();
+  std::cout << "scen added: " << this << std::endl;
 }
 
 bool Scene::AddSystem(System *sys) {
@@ -61,7 +64,7 @@ bool Scene::AddSystem(System *sys) {
 
   sys->SetScene(this);
   _systems[sys_type] = sys;
-  sys->Start();
+  sys->AddRef();
 
   return true;
 }
@@ -73,9 +76,8 @@ bool Scene::DelSystem(SystemType sys_type) {
   }
 
   auto sys = sys_itr->second;
-  sys->Stop();
   _systems.erase(sys_itr);
-  delete sys;
+  sys->DecRef();
 
   return true;
 }
@@ -133,12 +135,7 @@ std::vector<uint64_t> Scene::GetEntityIds()
 }
 
 void Scene::Logic() {
-  for (int i = SystemType_Unknown + 1; i < SystemType_MAX; i++) {
-    auto idx = static_cast<SystemType>(i);
-    if (_systems.count(idx)) {
-      _systems[idx]->Tick();
-    }
-  }
+  
 }
 
 std::vector<IEntity *> Scene::GetEntitiesByType(ComponentType type) {
@@ -159,18 +156,48 @@ Entity* Scene::GetEntitiesById(uint64_t ent_id)
   return nullptr;
 }
 
+std::vector<Entity*> Scene::GetEntitiesByTypeExt(int type)
+{
+  std::vector<Entity*> res;
+  for (auto const& ent : _entity_tag_list[type]) {
+    res.push_back(dynamic_cast<Entity*>(ent.second));
+  }
+
+  return res;
+}
+
+std::vector<System*> Scene::GetSystems()
+{
+  std::vector<System*> res;
+  for (int i = SystemType_Unknown + 1; i < SystemType_MAX; i++) {
+    auto idx = static_cast<SystemType>(i);
+    if (_systems.count(idx)) {
+      res.push_back(_systems[idx]);
+    }
+  }
+  return res;
+}
+
 BIND_CLS_FUNC_DEFINE(Scene, GetEntityCount)
 BIND_CLS_FUNC_DEFINE(Scene, GetEntityIds)
 BIND_CLS_FUNC_DEFINE(Scene, AddEntity)
+BIND_CLS_FUNC_DEFINE(Scene, AddSystem)
 BIND_CLS_FUNC_DEFINE(Scene, GetEntitiesById)
+BIND_CLS_FUNC_DEFINE(Scene, SetActiveCamera)
+BIND_CLS_FUNC_DEFINE(Scene, GetEntitiesByTypeExt)
+BIND_CLS_FUNC_DEFINE(Scene, GetSystems)
 
 static PyMethodDef type_methods[] = {
   {"get_entity_count", BIND_CLS_FUNC_NAME(Scene, GetEntityCount), METH_NOARGS, 0},
-  {"get_entity_list", BIND_CLS_FUNC_NAME(Scene, GetEntityIds), METH_NOARGS, 0},
+  {"GetEntityIds", BIND_CLS_FUNC_NAME(Scene, GetEntityIds), METH_NOARGS, 0},
   {"AddEntity", BIND_CLS_FUNC_NAME(Scene, AddEntity), METH_VARARGS, 0},
+  {"AddSystem", BIND_CLS_FUNC_NAME(Scene, AddSystem), METH_VARARGS, 0},
   {"GetEntitiesById", BIND_CLS_FUNC_NAME(Scene, GetEntitiesById), METH_VARARGS, 0},
+  {"SetActiveCamera", BIND_CLS_FUNC_NAME(Scene, SetActiveCamera), METH_VARARGS, 0},
+  {"GetEntitiesByType", BIND_CLS_FUNC_NAME(Scene, GetEntitiesByTypeExt), METH_VARARGS, 0},
+  {"GetSystems", BIND_CLS_FUNC_NAME(Scene, GetSystems), METH_NOARGS, 0},
   {0, nullptr, 0, 0},
 };
 
-DEFINE_PYCXX_OBJECT_TYPE_BASE(Scene, "Scene", type_methods)
+DEFINE_PYCXX_OBJECT_TYPE_BASE(Scene, "Scene", type_methods, py_init_params<>())
 } // namespace ECS

@@ -8,7 +8,7 @@
 #include "world.h"
 
 namespace ECS {
-void SystemCamera::Tick() {
+void SystemCamera::Tick(float dt) {
   static auto last_time = std::chrono::steady_clock::now();
   auto now_time = std::chrono::steady_clock::now();
   auto delta_time = std::chrono::duration<double>(now_time - last_time);

@@ -27,8 +27,11 @@ public:
   decltype(auto) GetEntityCount();
   std::vector<uint64_t> GetEntityIds();
 
-  std::vector<IEntity *> GetEntitiesByType(ComponentType type);
+  std::vector<IEntity*> GetEntitiesByType(ComponentType type);
   Entity* GetEntitiesById(uint64_t ent_id);
+
+  std::vector<Entity*> GetEntitiesByTypeExt(int type);
+  std::vector<System*> GetSystems();
 
   void SetActiveCamera(uint64_t ent_id) { _active_camera = ent_id; }
   uint64_t GetActiveCamera() { return _active_camera; }

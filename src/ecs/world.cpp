@@ -105,6 +105,11 @@ void World::initRender()
   render::Render::GetInstance().Init();
 }
 
+void World::startScript()
+{
+  InitPythonPost();
+}
+
 void World::updateInput() {
   if (glfwGetKey(_window, GLFW_KEY_Q) == GLFW_PRESS) {
     glfwSetWindowShouldClose(_window, true);
@@ -126,9 +131,7 @@ void World::updateInput() {
 void World::logic() {
   updateInput();
 
-  for (auto const &scn : _scenes) {
-    scn->Logic();
-  }
+  TickPython();
 
   ctx.input.ClearEachFrame();
 }
@@ -156,6 +159,8 @@ void World::Init() {
   initGL();
   initPhysx();
   initRender();
+
+  startScript();
 }
 
 void World::Run() {
@@ -164,8 +169,6 @@ void World::Run() {
 
     logic();
 
-    TickPython();
-
     render();
 
     curr_frame++;
@@ -173,9 +176,11 @@ void World::Run() {
 }
 
 BIND_CLS_FUNC_DEFINE(World, GetActiveScene)
+BIND_CLS_FUNC_DEFINE(World, AddScene)
 
 static PyMethodDef type_methods[] = {
   {"get_active_scene", BIND_CLS_FUNC_NAME(World, GetActiveScene), METH_NOARGS, 0},
+  {"AddScene", BIND_CLS_FUNC_NAME(World, AddScene), METH_VARARGS, 0},
   {0, nullptr, 0, 0},
 };
 

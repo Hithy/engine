@@ -3,6 +3,7 @@
 #include "entity_base.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include "pybind/pybind.h"
 
 namespace ECS {
 glm::mat4 ComponentCamera::GetView() {
@@ -28,5 +29,5 @@ glm::mat4 ComponentCamera::GetView() {
   return rotate_mat * glm::mat4(1.0f);
 }
 
-DEFINE_PYCXX_OBJECT_TYPE_ENGINE(Component, ComponentCamera, "ComponentCamera", nullptr)
+DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentCamera, "ComponentCamera", nullptr, py_init_params<>())
 } // namespace ECS

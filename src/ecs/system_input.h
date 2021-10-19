@@ -6,7 +6,7 @@ class SystemInput : public System {
 public:
   SystemInput() : System(SystemType_Input) {}
 
-  void Tick() override;
+  void Tick(float dt) override;
   void Start() override;
   void Stop() override;
 };

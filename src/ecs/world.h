@@ -76,6 +76,8 @@ private:
   void initPhysx();
   void initRender();
 
+  void startScript();
+
   void updateInput();
   void logic();
   void render();

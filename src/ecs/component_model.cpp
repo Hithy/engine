@@ -1,6 +1,7 @@
 #include "component_model.h"
 
 #include "render/Model.h"
+#include "pybind/pybind.h"
 
 namespace ECS {
 
@@ -34,5 +35,22 @@ ComponentModel::~ComponentModel() {
   }
 }
 
-DEFINE_PYCXX_OBJECT_TYPE_ENGINE(Component, ComponentModel, "ComponentModel", nullptr)
+BIND_CLS_FUNC_DEFINE(ComponentModel, SetModelPath);
+BIND_CLS_FUNC_DEFINE(ComponentModel, SetAlbedoPath);
+BIND_CLS_FUNC_DEFINE(ComponentModel, SetNormalPath);
+BIND_CLS_FUNC_DEFINE(ComponentModel, SetMetalicPath);
+BIND_CLS_FUNC_DEFINE(ComponentModel, SetRouphnessPath);
+BIND_CLS_FUNC_DEFINE(ComponentModel, SetAOPath);
+
+static PyMethodDef type_methods[] = {
+  {"SetModelPath", BIND_CLS_FUNC_NAME(ComponentModel, SetModelPath), METH_VARARGS, 0},
+  {"SetAlbedoPath", BIND_CLS_FUNC_NAME(ComponentModel, SetAlbedoPath), METH_VARARGS, 0},
+  {"SetNormalPath", BIND_CLS_FUNC_NAME(ComponentModel, SetNormalPath), METH_VARARGS, 0},
+  {"SetMetalicPath", BIND_CLS_FUNC_NAME(ComponentModel, SetMetalicPath), METH_VARARGS, 0},
+  {"SetRouphnessPath", BIND_CLS_FUNC_NAME(ComponentModel, SetRouphnessPath), METH_VARARGS, 0},
+  {"SetAOPath", BIND_CLS_FUNC_NAME(ComponentModel, SetAOPath), METH_VARARGS, 0},
+  {0, nullptr, 0, 0},
+};
+
+DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentModel, "ComponentModel", type_methods, py_init_params<const char*>())
 }

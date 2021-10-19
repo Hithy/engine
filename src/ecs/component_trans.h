@@ -28,6 +28,8 @@ public:
   void SetScale(glm::vec3 scale) { _scale = scale; }
   glm::vec3 GetScale() const;
 
+  void SetRotationEular(const glm::vec3& eular);
+
   bool SetTransform(glm::mat4 trans_mat);
   glm::mat4 GetTransform() const;
 

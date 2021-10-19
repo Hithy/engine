@@ -34,7 +34,7 @@ enum LightType {
 class ComponentLight : public Component {
 public:
   DECLEAR_PYCXX_OBJECT_TYPE(ComponentLight);
-  ComponentLight(LightType type);
+  ComponentLight(int type);
   virtual ~ComponentLight();
 
   LightType GetLightType() { return _type; }

@@ -9,6 +9,12 @@
 #include "ecs/component_trans.h"
 #include "ecs/component_base.h"
 
+#include "ecs/system_camera.h"
+#include "ecs/system_input.h"
+#include "ecs/system_model.h"
+#include "ecs/system_syncrender.h"
+#include "ecs/system_scene.h"
+
 #include "ecs/pyfunc.h"
 
 #include <Python.h>
@@ -35,14 +41,17 @@ static void GetAbsPath(wchar_t* output, int buff_size, const char* sub_path) {
 static void InitPath() {
   wchar_t output[2048] = { 0 };
   memset(output, 0, sizeof(output[0]) * 2048);
-  GetAbsPath(output, 2048, "3rd\\Python-3.9.7");
+  GetAbsPath(output, 2048, "3rd\\python");
   Py_SetPythonHome(output);
 
   memset(output, 0, sizeof(output[0]) * 2048);
-  GetAbsPath(output, 2048, "3rd\\Python-3.9.7\\Lib");
+  GetAbsPath(output, 2048, "3rd\\python\\Lib");
   std::wstring path = output;
   memset(output, 0, sizeof(output[0]) * 2048);
   GetAbsPath(output, 2048, "script");
+  path = path + L";" + output;
+  memset(output, 0, sizeof(output[0]) * 2048);
+  GetAbsPath(output, 2048, "3rd\\python\\Lib\\site-packages");
   path = path + L";" + output;
   Py_SetPath(path.c_str());
 }
@@ -121,12 +130,22 @@ void InitPython() {
   PyModule_AddType(new_module, Entity::GetPyType());
   PyModule_AddType(new_module, Scene::GetPyType());
   PyModule_AddType(new_module, World::GetPyType());
+  PyModule_AddType(new_module, System::GetPyType());
   PyModule_AddType(new_module, Component::GetPyType());
+
   PyModule_AddType(new_module, ComponentModel::GetPyType());
   PyModule_AddType(new_module, ComponentTransform::GetPyType());
+  PyModule_AddType(new_module, ComponentCamera::GetPyType());
+
+  PyModule_AddType(new_module, SystemCamera::GetPyType());
+  PyModule_AddType(new_module, SystemModel::GetPyType());
+  PyModule_AddType(new_module, SystemSyncRender::GetPyType());
+  PyModule_AddType(new_module, SystemInput::GetPyType());
 
   ECS::InitFuncModule(new_module);
+}
 
+void InitPythonPost() {
   PyRun_SimpleString(
     "import script_main\n"
     "script_main.__start__()\n"

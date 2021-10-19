@@ -60,16 +60,7 @@ public:
 };
 
 void pybind__dealloc__(PyObject* self);
-
-template<typename T>
-static PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
-  auto new_obj = subtype->tp_alloc(subtype, 0);
-  T* obj = new T();
-  ((PyBindObject*)new_obj)->obj = (BindObject*)obj;
-  obj->SetPyObj((PyBindObject*)new_obj);
-  std::cout << "new py obj: " << new_obj << std::endl;
-  return new_obj;
-}
+PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* kwds);
 
 #define DECLEAR_PYCXX_OBJECT_TYPE(cls) \
   static PyTypeObject *GetPyType(); \
@@ -77,7 +68,7 @@ static PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* 
     return GetPyType(); \
   }
 
-#define DEFINE_PYCXX_OBJECT_TYPE_BASE(cls, name, methods)                      \
+#define DEFINE_PYCXX_OBJECT_TYPE_BASE(cls, name, methods, init_params)                      \
   PyTypeObject *cls::GetPyType() {                                             \
     static PyTypeObject *new_type = nullptr;                                   \
     if (new_type) {                                                            \
@@ -86,13 +77,14 @@ static PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* 
     new_type = new PyTypeObject{PyVarObject_HEAD_INIT(NULL, 0) name,           \
                                 sizeof(PyBindObject)};                         \
     new_type->tp_dealloc = pybind__dealloc__;                                  \
-    new_type->tp_new = pybind__new__<cls>;                                     \
+    new_type->tp_init = GenPyInitFunc<cls>(init_params);                                  \
+    new_type->tp_new = pybind__new__;                                     \
     new_type->tp_methods = methods;                                            \
     new_type->tp_flags |= Py_TPFLAGS_BASETYPE;                                 \
     return new_type;                                                           \
   }
 
-#define DEFINE_PYCXX_OBJECT_TYPE(base, cls, name, methods)                     \
+#define DEFINE_PYCXX_OBJECT_TYPE(base, cls, name, methods, init_params)                     \
   PyTypeObject *cls::GetPyType() {                                             \
     static PyTypeObject *new_type = nullptr;                                   \
     if (new_type) {                                                            \
@@ -101,22 +93,8 @@ static PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* 
     new_type = new PyTypeObject{PyVarObject_HEAD_INIT(NULL, 0) name,           \
                                 sizeof(PyBindObject)};                         \
     new_type->tp_dealloc = pybind__dealloc__;                                  \
-    new_type->tp_new = pybind__new__<cls>;                                     \
-    new_type->tp_methods = methods;                                            \
-    new_type->tp_flags |= Py_TPFLAGS_BASETYPE;                                 \
-    new_type->tp_base = base::GetPyType();                                     \
-    return new_type;                                                           \
-  }
-
-#define DEFINE_PYCXX_OBJECT_TYPE_ENGINE(base, cls, name, methods)              \
-  PyTypeObject *cls::GetPyType() {                                             \
-    static PyTypeObject *new_type = nullptr;                                   \
-    if (new_type) {                                                            \
-      return new_type;                                                         \
-    }                                                                          \
-    new_type = new PyTypeObject{PyVarObject_HEAD_INIT(NULL, 0) name,           \
-                                sizeof(PyBindObject)};                         \
-    new_type->tp_dealloc = pybind__dealloc__;                                  \
+    new_type->tp_init = GenPyInitFunc<cls>(init_params);                                  \
+    new_type->tp_new = pybind__new__;                                     \
     new_type->tp_methods = methods;                                            \
     new_type->tp_flags |= Py_TPFLAGS_BASETYPE;                                 \
     new_type->tp_base = base::GetPyType();                                     \

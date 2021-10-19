@@ -31,27 +31,36 @@ else()
   find_package(assimp REQUIRED)
 endif()
 
-add_subdirectory("3rd/Python-3.9.7")
 target_include_directories(engine PUBLIC
-  "3rd/Python-3.9.7/Include"
+  "3rd/python/Include"
   )
 if (UNIX)
   target_include_directories(engine PUBLIC
-      "3rd/Python-3.9.7/Linux"
+      "3rd/python/Linux"
     )
+  add_custom_command(TARGET engine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/3rd/lib/runtime/linux"
+        $<TARGET_FILE_DIR:engine>)
 elseif(WIN32)
   target_include_directories(engine PUBLIC
-      "3rd/Python-3.9.7/PC"
+      "3rd/python/PC"
     )
+  add_custom_command(TARGET engine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/3rd/lib/runtime/windows"
+        $<TARGET_FILE_DIR:engine>)
 endif()
 
 target_include_directories(engine PUBLIC "src")
 target_include_directories(engine PUBLIC "3rd/include")
+target_link_directories(engine PUBLIC "3rd/lib/compile")
 
 if (UNIX)
   target_link_libraries(engine dl)
 endif(UNIX)
-target_link_libraries(engine glfw assimp pythoncore)
+
+target_link_libraries(engine glfw assimp python3)
 
 add_custom_target(run
   COMMAND engine

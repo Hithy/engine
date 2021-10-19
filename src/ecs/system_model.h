@@ -6,7 +6,7 @@ class SystemModel : public System {
 public:
   SystemModel() : System(SystemType_Model) {}
 
-  void Tick() override;
+  void Tick(float dt) override;
   void Start() override{};
   void Stop() override{};
 };

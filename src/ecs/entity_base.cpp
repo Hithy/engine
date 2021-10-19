@@ -61,6 +61,6 @@ static PyMethodDef type_methods[] = {
     {0, nullptr, 0, 0},
 };
 
-DEFINE_PYCXX_OBJECT_TYPE_BASE(Entity, "Entity", type_methods)
+DEFINE_PYCXX_OBJECT_TYPE_BASE(Entity, "Entity", type_methods, py_init_params<>())
 
 } // namespace ECS

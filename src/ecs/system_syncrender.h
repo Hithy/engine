@@ -6,7 +6,7 @@ class SystemSyncRender : public System {
 public:
   SystemSyncRender() : System(SystemType_SyncRender) {}
 
-  void Tick() override;
+  void Tick(float dt) override;
   void Start() override;
   void Stop() override;
 

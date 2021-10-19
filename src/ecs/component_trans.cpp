@@ -1,7 +1,8 @@
 #include "component_trans.h"
 
 #include "glm/gtx/quaternion.hpp"
-#include <glm/gtx/matrix_decompose.hpp>
+#include "glm/gtx/matrix_decompose.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 #include "pybind/pybind.h"
 
@@ -22,6 +23,11 @@ glm::quat ComponentTransform::GetRotation() const { return _rotation; }
 
 glm::vec3 ComponentTransform::GetScale() const { return _scale; }
 
+void ComponentTransform::SetRotationEular(const glm::vec3& eular)
+{
+  _rotation = glm::quat(glm::vec3(eular.y, eular.x, eular.z));
+}
+
 bool ComponentTransform::SetTransform(glm::mat4 trans_mat) {
   glm::vec3 skew;
   glm::vec4 perspective;
@@ -35,14 +41,16 @@ BIND_CLS_FUNC_DEFINE(ComponentTransform, SetPosition)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, GetPosition)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetScale)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, GetScale)
+BIND_CLS_FUNC_DEFINE(ComponentTransform, SetRotationEular)
 
 static PyMethodDef type_methods[] = {
   {"SetPosition", BIND_CLS_FUNC_NAME(ComponentTransform, SetPosition), METH_VARARGS, 0},
   {"GetPosition", BIND_CLS_FUNC_NAME(ComponentTransform, GetPosition), METH_NOARGS, 0},
   {"SetScale", BIND_CLS_FUNC_NAME(ComponentTransform, SetScale), METH_VARARGS, 0},
   {"GetScale", BIND_CLS_FUNC_NAME(ComponentTransform, GetScale), METH_NOARGS, 0},
+  {"SetRotationEular", BIND_CLS_FUNC_NAME(ComponentTransform, SetRotationEular), METH_VARARGS, 0},
   {0, nullptr, 0, 0},
 };
 
-DEFINE_PYCXX_OBJECT_TYPE_ENGINE(Component, ComponentTransform, "ComponentTransform", type_methods)
+DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentTransform, "ComponentTransform", type_methods, py_init_params<>())
 } // namespace ECS

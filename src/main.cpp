@@ -131,44 +131,6 @@ int main() {
   auto& world = ECS::World::GetInstance();
   world.Init();
 
-  // init system
-  auto* scene_obj = new ECS::Scene();
-  scene_obj->AddSystem(new ECS::SystemCamera());
-  scene_obj->AddSystem(new ECS::SystemModel());
-  scene_obj->AddSystem(new ECS::SystemInput());
-  scene_obj->AddSystem(new ECS::SystemSyncRender());
-
-  // create entity
-  auto cam_ent = CreateCamera();
-  scene_obj->AddEntity(cam_ent);
-  // floor
-  /*scene_obj->AddEntity(CreateModelObj(floor_path,
-    glm::vec3(0.0f, -3.0f, 0.0f),
-    glm::vec3(1.0f, 1.0f, 1.0f)));*/
-
-  /*scene_obj->AddEntity(CreateModelObj(wall_path,
-    glm::vec3(5.0f, 0.0f, -15.0f),
-    glm::vec3(1.0f, 2.0f, 4.0f)));
-
-  scene_obj->AddEntity(CreateModelObj(wall_path,
-    glm::vec3(-5.0f, 0.0f, -15.0f),
-    glm::vec3(1.0f, 2.0f, 4.0f)));*/
-
-  /*scene_obj->AddEntity(CreateAmbientLight(glm::vec3(4.0f, -4.0f, 0.0f)));*/
-
-  // scene_obj->AddEntity(CreateDirLight(glm::vec3(4.0f, -4.0f, 0.0f)));
-  // scene_obj->AddEntity(CreateDirLight(glm::vec3(-4.0f, -4.0f, 4.0f)));
-
-  /*scene_obj->AddEntity(CreatePointLight(glm::vec3(0.0f, 0.0f, -18.0f)));
-  scene_obj->AddEntity(CreateSunLight(glm::vec3(0.0f, 5.0f, -35.0f)));*/
-  // scene_obj->AddEntity(CreatePointLight(glm::vec3(5.0f, 5.0f, -20.0f)));
-  /*scene_obj->AddEntity(CreateModelObj(backpack_path,
-                                   glm::vec3(0.0f, 0.0f, -15.0f),
-                                   glm::vec3(0.01f, 0.01f, 0.01f)));*/
-
-  scene_obj->SetActiveCamera(cam_ent->GetID());
-
-  world.AddScene(scene_obj);
   world.Run();
 
   return 0;

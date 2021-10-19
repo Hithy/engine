@@ -10,7 +10,7 @@
 #include "render/resource_mgr.h"
 
 namespace ECS {
-  void SystemSyncRender::Tick()
+  void SystemSyncRender::Tick(float dt)
   {
     UpdateCameraTrans();
     UpdateLights();

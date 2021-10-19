@@ -4,7 +4,7 @@
 #include "world.h"
 
 namespace ECS {
-void SystemInput::Tick() {
+void SystemInput::Tick(float dt) {
   auto &world = World::GetInstance();
   auto& input = world.ctx.input;
 

@@ -6,7 +6,7 @@ class SystemCamera : public System {
 public:
   SystemCamera() : System(SystemType_Camera) {}
 
-  void Tick() override;
+  void Tick(float dt) override;
   void Start() override;
   void Stop() override;
 };

@@ -1,11 +1,12 @@
 #include "component_light.h"
 
 #include <glad/glad.h>
+#include "pybind/pybind.h"
 
 namespace ECS {
-  ComponentLight::ComponentLight(LightType type)
+  ComponentLight::ComponentLight(int type)
     : Component(ComponentType_Light), 
-    _type(type), 
+    _type(static_cast<LightType>(type)), 
     _light(), 
     _shadow_texture(0)
   {
@@ -24,5 +25,5 @@ namespace ECS {
     _shadow_texture = texture;
   }
 
-  DEFINE_PYCXX_OBJECT_TYPE_ENGINE(Component, ComponentLight, "ComponentLight", nullptr)
+  DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentLight, "ComponentLight", nullptr, py_init_params<int>())
 }

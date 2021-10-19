@@ -8,7 +8,7 @@
 
 namespace ECS {
 
-void SystemModel::Tick() {
+void SystemModel::Tick(float dt) {
   auto ents = _scene->GetEntitiesByType(ComponentType_Model);
 
   for (auto &ent : ents) {

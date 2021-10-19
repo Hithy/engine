@@ -269,3 +269,45 @@ static PyObject* PYBIND_##fn(PyObject* self, PyObject* args) { \
 }
 
 #define BIND_FUNC_NAME(fn) PYBIND_##fn
+
+template <typename ...Args>
+struct py_init_params {
+  py_init_params() {}
+};
+
+template <typename Cls, typename ...Args, int... S>
+int wrap_init_func_inner(PyObject* self, PyObject* args, PyObject* kwds, seq<S...>) {
+  ParamList<Args...> params;
+  char param_build[sizeof...(S) + 1] = { 0 };
+  BuildParamTypes(param_build, &params); // TODO: constexpr
+
+  if (sizeof...(S) > 0) {
+    if (!PyArg_ParseTuple(args, param_build, ParamGet<S>::get_ptr(&params)...)) {
+      return -1;
+    }
+  }
+
+  PyBindObject* py_obj = reinterpret_cast<PyBindObject*>(self);
+  if (!py_obj->obj) {
+    py_obj->obj = new Cls(ParamGet<S>::get(&params)...);
+    py_obj->obj->SetPyObj(py_obj);
+    // ::printf("create obj py: %p, c: %p\n", py_obj, py_obj->obj);
+    return 0;
+  }
+
+  return -1;
+}
+
+typedef int (*PyInitFunction)(PyObject* self, PyObject* args, PyObject* kwds);
+
+template<typename Cls, typename ...Args>
+static int PyInitFunc(PyObject* self, PyObject* args, PyObject* kwds) {
+  typename gen_seq<sizeof...(Args)>::type param_len;
+
+  return wrap_init_func_inner<Cls, Args...>(self, args, kwds, param_len);
+}
+
+template<typename Cls, typename ...Args>
+PyInitFunction GenPyInitFunc(py_init_params<Args...>) {
+  return PyInitFunc<Cls, Args...>;
+}
