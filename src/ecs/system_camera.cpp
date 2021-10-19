@@ -17,8 +17,8 @@ void SystemCamera::Tick(float dt) {
   auto &world = World::GetInstance();
 
   auto& input = world.ctx.input;
-  auto delta_x = (input.move_delta_x * input.sensitivity);
-  auto delta_y = (input.move_delta_y * input.sensitivity);
+  auto delta_x = (input.move_delta_x * delta_time.count() * 30);
+  auto delta_y = (input.move_delta_y * delta_time.count() * 30);
 
   bool WPressed = (input.W_Status == GLFW_PRESS);
   bool SPressed = (input.S_Status == GLFW_PRESS);
