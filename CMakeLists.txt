@@ -38,10 +38,6 @@ if (UNIX)
   target_include_directories(engine PUBLIC
       "3rd/python/Linux"
     )
-  add_custom_command(TARGET engine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_SOURCE_DIR}/3rd/lib/runtime/linux"
-        $<TARGET_FILE_DIR:engine>)
 elseif(WIN32)
   target_include_directories(engine PUBLIC
       "3rd/python/PC"
@@ -57,7 +53,7 @@ target_include_directories(engine PUBLIC "3rd/include")
 target_link_directories(engine PUBLIC "3rd/lib/compile")
 
 if (UNIX)
-  target_link_libraries(engine dl)
+  target_link_libraries(engine dl pthread util)
 endif(UNIX)
 
 target_link_libraries(engine glfw assimp python3)

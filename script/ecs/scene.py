@@ -1,5 +1,5 @@
 import _engine
-import numpy
+# import numpy
 from ecs import rotate_system
 
 def createGun():
