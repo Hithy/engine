@@ -69,14 +69,17 @@ static void GetAbsPath(wchar_t* output, int buff_size, const char* sub_path) {
 static void InitPath() {
   wchar_t output[2048] = { 0 };
   memset(output, 0, sizeof(output[0]) * 2048);
-  GetAbsPath(output, 2048, "3rd/Python-3.9.7");
+  GetAbsPath(output, 2048, "3rd/python");
   Py_SetPythonHome(output);
   
   memset(output, 0, sizeof(output[0]) * 2048);
-  GetAbsPath(output, 2048, "3rd/Python-3.9.7/Lib");
+  GetAbsPath(output, 2048, "3rd/python/Lib");
   std::wstring path = output;
   memset(output, 0, sizeof(output[0]) * 2048);
   GetAbsPath(output, 2048, "script");
+  path = path + L":" + output;
+  memset(output, 0, sizeof(output[0]) * 2048);
+  GetAbsPath(output, 2048, "3rd/python/Lib/site-packages");
   path = path + L":" + output;
   Py_SetPath(path.c_str());
 }
