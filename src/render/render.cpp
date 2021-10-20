@@ -189,17 +189,21 @@ namespace render {
     _light->SetFV3("cam_pos", glm::value_ptr(_camera_pos));
 
     _light->SetInt("point_light_count", _point_light.size());
-    for (int i = 0; i < _point_light.size(); i++) {
-      std::string base_name = "point_light_list[" + std::to_string(i) + "]";
-      _light->SetFV3((base_name + ".position").c_str(), glm::value_ptr(_point_light[i].position));
-      _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(_point_light[i].color));
+    int idx = 0;
+    for (const auto& p_light : _point_light) {
+      std::string base_name = "point_light_list[" + std::to_string(idx) + "]";
+      _light->SetFV3((base_name + ".position").c_str(), glm::value_ptr(p_light.second.position));
+      _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(p_light.second.color));
+      idx++;
     }
 
     _light->SetInt("direction_light_count", _direction_light.size());
-    for (int i = 0; i < _direction_light.size(); i++) {
-      std::string base_name = "direction_light_list[" + std::to_string(i) + "]";
-      _light->SetFV3((base_name + ".direction").c_str(), glm::value_ptr(_direction_light[i].direction));
-      _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(_direction_light[i].color));
+    idx = 0;
+    for (const auto& d_light : _direction_light) {
+      std::string base_name = "direction_light_list[" + std::to_string(idx) + "]";
+      _light->SetFV3((base_name + ".direction").c_str(), glm::value_ptr(d_light.second.direction));
+      _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(d_light.second.color));
+      idx++;
     }
 
     auto position_ao_texture = GetTexture2DResource(_g_position_ao);

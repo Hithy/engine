@@ -2,6 +2,19 @@ import _engine
 # import numpy
 from ecs import rotate_system
 
+def createPointLight(color, pos):
+	comp_light = _engine.ComponentLight(2)
+	comp_light.SetLightColor(color)
+
+	comp_trans = _engine.CreateComponentTransform()
+	comp_trans.SetPosition(pos)
+
+	ent = _engine.CreateEntity()
+	ent.AddComponent(comp_light)
+	ent.AddComponent(comp_trans)
+
+	return ent
+
 def createBall(material, pos):
 	comp_model = _engine.CreateComponentModel("resource/models/ball/ball.obj")
 	comp_model.SetAlbedoPath("resource/images/pbr/" + material + "/albedo.png")
@@ -22,7 +35,7 @@ def createBall(material, pos):
 	return ent
 
 def createGun():
-	comp_model = _engine.CreateComponentModel("resource/models/ball/ball.obj")
+	comp_model = _engine.CreateComponentModel("resource/models/Cerberus_by_Andrew_Maximov/Cerberus_LP.FBX")
 	comp_model.SetAlbedoPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_A.tga")
 	comp_model.SetNormalPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_N.tga")
 	comp_model.SetMetalicPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_M.tga")
@@ -30,7 +43,7 @@ def createGun():
 	comp_model.SetAOPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Raw/Cerberus_AO.tga")
 
 	comp_trans = _engine.CreateComponentTransform()
-	comp_trans.SetPosition([0.0, 5.0, -15.0])
+	comp_trans.SetPosition([0.0, 0.0, -15.0])
 	comp_trans.SetScale([0.1, 0.1, 0.1])
 	comp_trans.SetRotationEular([1.600, 4.660, 0.1])
 
@@ -91,11 +104,16 @@ class PyScene(_engine.Scene):
 
 		# self.AddEntity(createGun())
 		# self.AddEntity(createBackpack())
-		self.AddEntity(createBall("rusted_iron", [-5.0, 0.0, 2.0]))
-		self.AddEntity(createBall("gold", [-3.0, 0.0, 2.0]))
-		self.AddEntity(createBall("grass", [-1.0, 0.0, 2.0]))
-		self.AddEntity(createBall("plastic", [1.0, 0.0, 2.0]))
-		self.AddEntity(createBall("wall", [3.0, 0.0, 2.0]))
+		self.AddEntity(createBall("rusted_iron", [-5.0, 0.0, -15.0]))
+		self.AddEntity(createBall("gold", [-3.0, 0.0, -15.0]))
+		self.AddEntity(createBall("grass", [-1.0, 0.0, -15.0]))
+		self.AddEntity(createBall("plastic", [1.0, 0.0, -15.0]))
+		self.AddEntity(createBall("wall", [3.0, 0.0, -15.0]))
+
+		self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-8.0, -2.0, -20.0]))
+		self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-2.0, 2.0, -20.0]))
+		self.AddEntity(createPointLight([100.0, 100.0, 100.0], [8.0, -2.0, -20.0]))
+		self.AddEntity(createPointLight([100.0, 100.0, 100.0], [2.0, 2.0, -20.0]))
 
 	def add_system(self, sys):
 		super().AddSystem(sys)

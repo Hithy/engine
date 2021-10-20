@@ -9,16 +9,11 @@
 
 namespace ECS {
 void SystemCamera::Tick(float dt) {
-  static auto last_time = std::chrono::steady_clock::now();
-  auto now_time = std::chrono::steady_clock::now();
-  auto delta_time = std::chrono::duration<double>(now_time - last_time);
-  last_time = now_time;
-
   auto &world = World::GetInstance();
 
   auto& input = world.ctx.input;
-  auto delta_x = (input.move_delta_x * input.sensitivity);
-  auto delta_y = (input.move_delta_y * input.sensitivity);
+  auto delta_x = (input.move_delta_x * input.sensitivity * dt);
+  auto delta_y = (input.move_delta_y * input.sensitivity * dt);
 
   bool WPressed = (input.W_Status == GLFW_PRESS);
   bool SPressed = (input.S_Status == GLFW_PRESS);
@@ -32,12 +27,8 @@ void SystemCamera::Tick(float dt) {
     auto comp_cam = dynamic_cast<ComponentCamera*>(base_ent->GetComponent(ComponentType_Camera));
     auto comp_trans = dynamic_cast<ComponentTransform*>(base_ent->GetComponent(ComponentType_Transform));
 
-    // update yaw/pitch
-    comp_cam->SetYaw(comp_cam->GetYaw() + delta_x);
-    comp_cam->SetPitch(comp_cam->GetPitch() - delta_y);
-
     // update pos
-    const float camera_speed = delta_time.count() * 10.0f;
+    const float camera_speed = dt * 10.0f;
     auto view = comp_cam->GetView();
     view = glm::inverse(view);
 
@@ -58,6 +49,10 @@ void SystemCamera::Tick(float dt) {
       cam_pos += glm::vec3(right * camera_speed);
     }
     comp_trans->SetPosition(cam_pos);
+
+    // update yaw/pitch
+    comp_cam->SetYaw(comp_cam->GetYaw() + delta_x);
+    comp_cam->SetPitch(comp_cam->GetPitch() - delta_y);
   }
 }
 

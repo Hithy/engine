@@ -12,11 +12,11 @@ struct DLight {
   vec3 diffuse;
 };
 
-#define POINT_LIGHT_MAX_COUNT 2
+#define POINT_LIGHT_MAX_COUNT 10
 uniform int point_light_count;
 uniform PLight point_light_list[POINT_LIGHT_MAX_COUNT];
 
-#define DIRECTION_LIGHT_MAX_COUNT 2
+#define DIRECTION_LIGHT_MAX_COUNT 10
 uniform int direction_light_count;
 uniform DLight direction_light_list[DIRECTION_LIGHT_MAX_COUNT];
 

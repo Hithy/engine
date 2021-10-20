@@ -4,9 +4,9 @@ namespace ECS {
 
 enum SystemType {
   SystemType_Unknown = 0,
+  SystemType_Input,
   SystemType_Camera,
   SystemType_Model,
-  SystemType_Input,
   SystemType_Rotate,
 
   SystemType_SyncRender,

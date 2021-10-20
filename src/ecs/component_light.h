@@ -45,6 +45,8 @@ public:
   void SetShadowTexture(unsigned int texture);
   unsigned int GetShadowTexture() const { return _shadow_texture; }
 
+  void SetLightColor(const glm::vec3& color);
+
 private:
   LightType _type;
   LightParam _light;

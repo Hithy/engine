@@ -75,5 +75,35 @@ namespace ECS {
   }
   void SystemSyncRender::UpdateLights()
   {
+    auto& render = render::Render::GetInstance();
+    render.ClearPointLight();
+    render.ClearDirectionLight();
+
+    auto light_ents = _scene->GetEntitiesByType(ComponentType_Light);
+    for (const auto& light_ent : light_ents) {
+      auto base_ent = dynamic_cast<Entity*>(light_ent);
+      auto comp_trans = dynamic_cast<ComponentTransform*>(
+        base_ent->GetComponent(ComponentType_Transform));
+      auto comp_light = dynamic_cast<ComponentLight*>(
+        base_ent->GetComponent(ComponentType_Light));
+
+      if (comp_light->GetLightType() == LightType_Point) {
+        render::RenderPointLight point_light;
+
+        point_light.light_id = base_ent->GetID();
+        point_light.position = comp_trans->GetPosition();
+        point_light.color = comp_light->GetLightParam().diffuse;
+
+        render.AddPointLight(point_light);
+      } else if (comp_light->GetLightType() == LightType_Direction) {
+        render::RenderDirectionLight direction_light;
+
+        direction_light.light_id = base_ent->GetID();
+        direction_light.direction = glm::mat3(comp_trans->GetTransform()) * glm::vec3(0.0f, 0.0f, 1.0f);
+        direction_light.color = comp_light->GetLightParam().diffuse;
+
+        render.AddDirectionLight(direction_light);
+      }
+    }
   }
 } // namespace ECS

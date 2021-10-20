@@ -25,5 +25,17 @@ namespace ECS {
     _shadow_texture = texture;
   }
 
-  DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentLight, "ComponentLight", nullptr, py_init_params<int>())
+  void ComponentLight::SetLightColor(const glm::vec3& color)
+  {
+    _light.diffuse = color;
+  }
+
+  BIND_CLS_FUNC_DEFINE(ComponentLight, SetLightColor);
+
+  static PyMethodDef type_methods[] = {
+  {"SetLightColor", BIND_CLS_FUNC_NAME(ComponentLight, SetLightColor), METH_VARARGS, 0},
+  {0, nullptr, 0, 0},
+  };
+
+  DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentLight, "ComponentLight", type_methods, py_init_params<int>())
 }
