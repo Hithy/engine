@@ -48,7 +48,7 @@ void main() {
   vec4 normal_metalic = texture(gNormalMetalic, TexCoords);
 
   float roughness = albedo_roughness.a;
-  vec3 albedo = albedo_roughness.rgb;
+  vec3 albedo = pow(albedo_roughness.rgb, vec3(2.2));
 
   vec3 N = normal_metalic.rgb;
   float metallic = normal_metalic.a;

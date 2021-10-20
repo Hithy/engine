@@ -93,7 +93,9 @@ void World::initGL() {
   glfwSetScrollCallback(_window, scroll_callback);
 
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
   // glEnable(GL_CULL_FACE);
+  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, 0);
 }
@@ -137,10 +139,10 @@ void World::logic() {
 }
 
 void World::render() {
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  /*glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, ctx.window_width, ctx.window_height);
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);*/
 
   render::Render::GetInstance().DoRender();
 

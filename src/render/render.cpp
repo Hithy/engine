@@ -43,6 +43,7 @@ namespace render {
 
   void Render::DoRender()
   {
+    // InitPbrIrradiance();
     RenderGbuffer();
     RenderLight();
     RenderSkyBox();
@@ -128,8 +129,8 @@ namespace render {
     _skybox = nullptr;
 
     // config
-    _pbr_skybox_width = 1024;
-    _pbr_skybox_height = 1024;
+    _pbr_skybox_width = 512;
+    _pbr_skybox_height = 512;
     _pbr_irradiance_width = 32;
     _pbr_irradiance_height = 32;
     _pbr_prefilter_width = 128;
@@ -142,12 +143,11 @@ namespace render {
   void Render::RenderGbuffer()
   {
     // input: mvp, framebuffer, map
-    glBindFramebuffer(GL_FRAMEBUFFER, _gbuffer_frame_buffer);
-
     _gbuffer->Use();
     _gbuffer->SetFM4("view", glm::value_ptr(_camera_view));
     _gbuffer->SetFM4("projection", glm::value_ptr(_camera_projection));
 
+    glBindFramebuffer(GL_FRAMEBUFFER, _gbuffer_frame_buffer);
     glViewport(0, 0, _windows_width, _windows_height);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -227,20 +227,19 @@ namespace render {
   }
   void Render::RenderSkyBox()
   {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, _gbuffer_frame_buffer);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, _windows_width, _windows_height, 0, 0, _windows_width,
-      _windows_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
-    glDepthFunc(GL_LEQUAL);
-    auto skybox_texture = GetTextureCubeResource(_pbr_texture_skybox);
-    skybox_texture->BindToTexture(0);
-    // glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl_diffuse_map);
-
     _skybox->Use();
     _skybox->SetFM4("view", glm::value_ptr(_camera_view));
     _skybox->SetFM4("projection", glm::value_ptr(_camera_projection));
     _skybox->SetInt("skybox", 0);
+    
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, _gbuffer_frame_buffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, _windows_width, _windows_height, 0, 0, _windows_width,
+      _windows_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    auto skybox_texture = GetTextureCubeResource(_pbr_texture_skybox);
+    skybox_texture->BindToTexture(0);
 
     renderBox();
   }
@@ -251,8 +250,8 @@ namespace render {
     glGenRenderbuffers(1, &_gbuffer_render_buffer);
     glGenFramebuffers(1, &_gbuffer_frame_buffer);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, _pbr_frame_buffer);
     glBindRenderbuffer(GL_RENDERBUFFER, _pbr_render_buffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, _pbr_frame_buffer);
 
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, _pbr_skybox_width, _pbr_skybox_height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _pbr_render_buffer);
@@ -302,6 +301,7 @@ namespace render {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       renderBox();
     }
+    skybox_texture->GenMipmap();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
@@ -313,6 +313,8 @@ namespace render {
     auto irradiance_texture = GetTextureCubeResource(_pbr_texture_irradiance);
 
     glBindFramebuffer(GL_FRAMEBUFFER, _pbr_frame_buffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, _pbr_render_buffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, _pbr_irradiance_width, _pbr_irradiance_height);
     glViewport(0, 0, _pbr_irradiance_width, _pbr_irradiance_height);
 
     _pbr_irradiance->Use();
@@ -335,12 +337,12 @@ namespace render {
     // output
     auto prefilter_texture = GetTextureCubeResource(_pbr_texture_prefilter);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, _pbr_frame_buffer);
-
     _pbr_prefilter->Use();
     _pbr_prefilter->SetFM4("projection", glm::value_ptr(captureProjection));
     skybox_texture->BindToTexture(0);
     _pbr_prefilter->SetInt("skybox", 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, _pbr_frame_buffer);
     unsigned int maxMipLevels = 5;
     for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
     {
@@ -373,9 +375,9 @@ namespace render {
     // output
     auto brdf_texture = GetTexture2DResource(_pbr_texture_brdf);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, _pbr_frame_buffer);
-
     _pbr_brdf->Use();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, _pbr_frame_buffer);
     glBindRenderbuffer(GL_RENDERBUFFER, _pbr_render_buffer);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, _pbr_brdf_width, _pbr_brdf_height);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_texture->GetTexture(), 0);
@@ -405,7 +407,7 @@ namespace render {
   }
   void Render::InitObjects()
   {
-    _pbr_texture_skybox = GenTextureCube(_pbr_skybox_width, _pbr_skybox_height);
+    _pbr_texture_skybox = GenTextureCube(_pbr_skybox_width, _pbr_skybox_height, true);
     _pbr_texture_irradiance = GenTextureCube(_pbr_irradiance_width, _pbr_irradiance_height);
     _pbr_texture_prefilter = GenTextureCube(_pbr_prefilter_width, _pbr_prefilter_height, true);
     _pbr_texture_brdf = GenTexture2D(_pbr_brdf_width, _pbr_brdf_height, false, 2);

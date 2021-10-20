@@ -86,6 +86,7 @@ namespace render {
 
     bool BindToTexture(unsigned int texture_idx);
     bool BindToCurrentTexture();
+    void GenMipmap();
 
     unsigned int GetTexture() { return _gl_texture; }
 

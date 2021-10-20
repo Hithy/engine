@@ -1,28 +1,10 @@
 #include "ecs/world.h"
-#include "ecs/scene.h"
 #include "ecs/component_camera.h"
 #include "ecs/component_trans.h"
-#include "ecs/component_model.h"
 #include "ecs/component_light.h"
 #include "ecs/entity_base.h"
-#include "ecs/system_camera.h"
-#include "ecs/system_model.h"
-#include "ecs/system_input.h"
-#include "ecs/system_syncrender.h"
 
 #include "glm/glm.hpp"
-
-ECS::Entity *CreateModelObj(const char *path, const glm::vec3 &pos, const glm::vec3 scale) {
-  ECS::Entity* model_ent = new ECS::Entity();
-  glm::mat4 init_trans = glm::mat4(1.0f);
-  init_trans = glm::translate(init_trans, pos);
-  init_trans = glm::scale(init_trans, scale);
-  model_ent->AddComponent(new ECS::ComponentTransform(init_trans));
-  model_ent->AddComponent(new ECS::ComponentModel(path));
-  model_ent->SetRef(0);
-
-  return model_ent;
-}
 
 ECS::Entity* CreateSunLight(const glm::vec3& pos) {
   ECS::Entity* ent = new ECS::Entity();
@@ -109,19 +91,6 @@ ECS::Entity* CreateAmbientLight(const glm::vec3& forward) {
   comp_light->SetLightParam(light_param);
 
   ent->AddComponent(comp_light);
-
-  ent->SetRef(0);
-  return ent;
-}
-
-const char floor_path[] = "resource/models/floor/floor.obj";
-const char wall_path[] = "resource/models/wall/wall.obj";
-const char backpack_path[] = "resource/models/backpack/backpack.obj";
-
-ECS::Entity* CreateCamera() {
-  auto ent = new ECS::Entity();
-  ent->AddComponent(new ECS::ComponentCamera());
-  ent->AddComponent(new ECS::ComponentTransform());
 
   ent->SetRef(0);
   return ent;

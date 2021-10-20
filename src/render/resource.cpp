@@ -147,6 +147,15 @@ namespace render {
     return true;
   }
 
+  void ResourceTextureCube::GenMipmap()
+  {
+    if (!IsLoaded() || !_with_mipmap) {
+      return;
+    }
+    BindToTexture(0);
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+  }
+
   ResourceModel::ResourceModel(const char* path)
     : Resource(ResourceType::Model)
     , _path(path)

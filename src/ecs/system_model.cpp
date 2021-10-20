@@ -18,11 +18,11 @@ void SystemModel::Tick(float dt) {
 
     if (!comp_model->IsLoaded()) {
       comp_model->model_id = render::GenModel(comp_model->_model_path.c_str());
-      comp_model->albedo_id = render::GenTexture2DFromFile(comp_model->_albedo_path.c_str());
-      comp_model->normal_id = render::GenTexture2DFromFile(comp_model->_normal_path.c_str());
-      comp_model->metalic_id = render::GenTexture2DFromFile(comp_model->_metalic_path.c_str());
-      comp_model->roughness_id = render::GenTexture2DFromFile(comp_model->_roughness_path.c_str());
-      comp_model->ao_id = render::GenTexture2DFromFile(comp_model->_ao_path.c_str());
+      comp_model->albedo_id = render::GenTexture2DFromFile(comp_model->_albedo_path.c_str(), true);
+      comp_model->normal_id = render::GenTexture2DFromFile(comp_model->_normal_path.c_str(), true);
+      comp_model->metalic_id = render::GenTexture2DFromFile(comp_model->_metalic_path.c_str(), true);
+      comp_model->roughness_id = render::GenTexture2DFromFile(comp_model->_roughness_path.c_str(), true);
+      comp_model->ao_id = render::GenTexture2DFromFile(comp_model->_ao_path.c_str(), true);
       comp_model->SetLoaded();
     }
   }
