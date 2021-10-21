@@ -28,6 +28,16 @@ void ComponentTransform::SetRotationEular(const glm::vec3& eular)
   _rotation = glm::quat(glm::vec3(eular.y, eular.x, eular.z));
 }
 
+void ComponentTransform::SetForward(const glm::vec3& forward)
+{
+  glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+  if (glm::length(glm::cross(up, forward)) < 0.0001f) {
+    up = glm::vec3(1.0f, 0.0f, 0.0f);
+  }
+  auto view = glm::lookAt(GetPosition(), GetPosition() - forward, up);
+  SetTransform(glm::inverse(view));
+}
+
 bool ComponentTransform::SetTransform(glm::mat4 trans_mat) {
   glm::vec3 skew;
   glm::vec4 perspective;
@@ -42,6 +52,7 @@ BIND_CLS_FUNC_DEFINE(ComponentTransform, GetPosition)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetScale)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, GetScale)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetRotationEular)
+BIND_CLS_FUNC_DEFINE(ComponentTransform, SetForward)
 
 static PyMethodDef type_methods[] = {
   {"SetPosition", BIND_CLS_FUNC_NAME(ComponentTransform, SetPosition), METH_VARARGS, 0},
@@ -49,6 +60,7 @@ static PyMethodDef type_methods[] = {
   {"SetScale", BIND_CLS_FUNC_NAME(ComponentTransform, SetScale), METH_VARARGS, 0},
   {"GetScale", BIND_CLS_FUNC_NAME(ComponentTransform, GetScale), METH_NOARGS, 0},
   {"SetRotationEular", BIND_CLS_FUNC_NAME(ComponentTransform, SetRotationEular), METH_VARARGS, 0},
+  {"SetForward", BIND_CLS_FUNC_NAME(ComponentTransform, SetForward), METH_VARARGS, 0},
   {0, nullptr, 0, 0},
 };
 

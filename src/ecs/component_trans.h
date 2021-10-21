@@ -30,6 +30,8 @@ public:
 
   void SetRotationEular(const glm::vec3& eular);
 
+  void SetForward(const glm::vec3& forward);
+
   bool SetTransform(glm::mat4 trans_mat);
   glm::mat4 GetTransform() const;
 

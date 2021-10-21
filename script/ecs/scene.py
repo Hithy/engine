@@ -2,6 +2,19 @@ import _engine
 # import numpy
 from ecs import rotate_system
 
+def createDirectionLight(color, direction):
+	comp_light = _engine.ComponentLight(1)
+	comp_light.SetLightColor(color)
+
+	comp_trans = _engine.CreateComponentTransform()
+	comp_trans.SetForward(direction)
+
+	ent = _engine.CreateEntity()
+	ent.AddComponent(comp_light)
+	ent.AddComponent(comp_trans)
+
+	return ent
+
 def createPointLight(color, pos):
 	comp_light = _engine.ComponentLight(2)
 	comp_light.SetLightColor(color)
@@ -110,10 +123,11 @@ class PyScene(_engine.Scene):
 		self.AddEntity(createBall("plastic", [1.0, 0.0, -15.0]))
 		self.AddEntity(createBall("wall", [3.0, 0.0, -15.0]))
 
-		self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-8.0, -2.0, -20.0]))
-		self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-2.0, 2.0, -20.0]))
-		self.AddEntity(createPointLight([100.0, 100.0, 100.0], [8.0, -2.0, -20.0]))
-		self.AddEntity(createPointLight([100.0, 100.0, 100.0], [2.0, 2.0, -20.0]))
+		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-8.0, -2.0, -20.0]))
+		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-2.0, 2.0, -20.0]))
+		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [8.0, -2.0, -20.0]))
+		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [2.0, 2.0, -20.0]))
+		self.AddEntity(createDirectionLight([10.0, 10.0, 10.0], [1.0, 0.0, 1.0]))
 
 	def add_system(self, sys):
 		super().AddSystem(sys)
