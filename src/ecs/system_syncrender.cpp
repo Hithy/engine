@@ -93,6 +93,7 @@ namespace ECS {
         point_light.light_id = base_ent->GetID();
         point_light.position = comp_trans->GetPosition();
         point_light.color = comp_light->GetLightParam().diffuse;
+        point_light.enable_shadow = true;
 
         render.AddPointLight(point_light);
       } else if (comp_light->GetLightType() == LightType_Direction) {
@@ -101,6 +102,7 @@ namespace ECS {
         direction_light.light_id = base_ent->GetID();
         direction_light.direction = glm::mat3(comp_trans->GetTransform()) * glm::vec3(0.0f, 0.0f, 1.0f);
         direction_light.color = comp_light->GetLightParam().diffuse;
+        direction_light.enable_shadow = true;
 
         render.AddDirectionLight(direction_light);
       }

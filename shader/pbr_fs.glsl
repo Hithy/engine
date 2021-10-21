@@ -5,20 +5,25 @@ const float PI = 3.14159265359;
 struct PLight {
   vec3 position;
   vec3 diffuse;
+  int shadow_map_idx;
 };
 
 struct DLight {
   vec3 direction;
   vec3 diffuse;
+  mat4 shadow_vp;
+  int shadow_map_idx;
 };
 
 #define POINT_LIGHT_MAX_COUNT 10
 uniform int point_light_count;
 uniform PLight point_light_list[POINT_LIGHT_MAX_COUNT];
+uniform samplerCube point_light_shadow[5];
 
 #define DIRECTION_LIGHT_MAX_COUNT 10
 uniform int direction_light_count;
 uniform DLight direction_light_list[DIRECTION_LIGHT_MAX_COUNT];
+uniform sampler2D direction_light_shadow[5];
 
 // viewer
 uniform vec3 cam_pos;
@@ -41,6 +46,36 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
+
+float CalcDirShadow(DLight light, vec3 pos, vec3 normal)
+{
+  float shadow_ratio = 0.0f;
+  if (light.shadow_map_idx >= 0) {
+    vec4 shadow_tex = light.shadow_vp * vec4(pos, 1.0f);
+    vec3 projCoords = shadow_tex.xyz / shadow_tex.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    vec2 texelSize = 1.0 / textureSize(direction_light_shadow[light.shadow_map_idx], 0);
+    float bias = max(0.05 * (1.0 - pow(dot(normal, normalize(-light.direction)), 2.0)), 0.005);
+    
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(direction_light_shadow[light.shadow_map_idx], projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow_ratio += projCoords.z - bias > pcfDepth ? 1.0 : 0.0;        
+        }    
+    }
+    shadow_ratio /= 9.0;
+
+    /*
+    float pcfDepth = texture(direction_light_shadow[light.shadow_map_idx], projCoords.xy).r; 
+    shadow_ratio += projCoords.z > pcfDepth ? 1.0 : 0.0;     
+    */
+  }
+
+  return shadow_ratio;
+}
 
 void main() {
   vec4 pos_ao = texture(gPosAO, TexCoords);
@@ -90,7 +125,17 @@ void main() {
     float denominator = 4 * VdotN * LdotN + 0.0001;
 
     vec3 inner = (kD * albedo / PI) + numerator / denominator;
-    sum_color += inner * radiance * LdotN;
+    vec3 LO = inner * radiance * LdotN;
+
+    if (light.shadow_map_idx >= 0) {
+      float shadow_depth = texture(point_light_shadow[light.shadow_map_idx], -L).r * 100.0f;
+      float bias = 0.05;
+      if (shadow_depth + bias < dist) {
+        LO *= 0.0;
+      }
+    }
+
+    sum_color += LO;
   }
 
   // direction light
@@ -116,7 +161,11 @@ void main() {
     float denominator = 4 * VdotN * LdotN + 0.0001;
 
     vec3 inner = (kD * albedo / PI) + numerator / denominator;
-    sum_color += inner * radiance * LdotN;
+    vec3 LO = inner * radiance * LdotN;
+
+    float shadow_ratio = CalcDirShadow(light, WorldPos, N);
+
+    sum_color += LO * (1.0 - shadow_ratio);
   }
 
   vec3 ambient = vec3(0.0);

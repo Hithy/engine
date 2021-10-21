@@ -1,4 +1,5 @@
 #include <memory>
+#include <vector>
 
 #include "render.h"
 
@@ -26,6 +27,18 @@ namespace render {
      glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
   };
 
+  std::vector<glm::mat4> getPointLightVP(const glm::vec3& pos) {
+    std::vector<glm::mat4> res;
+    auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+    res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+    res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+    res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+    res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+    res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+    res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+    return res;
+  }
+
   void Render::PrepareRender()
   {
     // 1. skybox
@@ -43,7 +56,7 @@ namespace render {
 
   void Render::DoRender()
   {
-    // InitPbrIrradiance();
+    RenderShadow();
     RenderGbuffer();
     RenderLight();
     RenderSkyBox();
@@ -54,6 +67,7 @@ namespace render {
     InitShader();
     InitObjects();
     InitPBR();
+    InitShadowMap();
   }
 
   void Render::SetPbrSkyBox(const char* path)
@@ -90,6 +104,7 @@ namespace render {
   void Render::AddPointLight(const RenderPointLight& new_light)
   {
     _point_light[new_light.light_id] = new_light;
+    _point_light[new_light.light_id].shadow_map_idx = -1;
   }
 
   void Render::DelPointLight(uint64_t light_id)
@@ -105,6 +120,7 @@ namespace render {
   void Render::AddDirectionLight(const RenderDirectionLight& new_light)
   {
     _direction_light[new_light.light_id] = new_light;
+    _direction_light[new_light.light_id].shadow_map_idx = -1;
   }
 
   void Render::DelDirectionLight(uint64_t light_id)
@@ -139,6 +155,84 @@ namespace render {
     _pbr_brdf_height = 512;
     _windows_width = 1920;
     _windows_height = 1080;
+    _max_direction_light_shadow = 3;
+    _max_point_light_shadow = 3;
+    _shadow_map_width = 2048;
+    _shadow_map_height = 2048;
+  }
+  void Render::RenderShadow()
+  {
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, _shadow_frame_buffer);
+    glViewport(0, 0, _shadow_map_width, _shadow_map_height);
+
+    // point_light
+    _shadow_shader_point->Use();
+    _point_shadow_count = 0;
+    for (auto& light : _point_light) {
+      if (light.second.enable_shadow) {
+        // each light
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _point_shadow_map[_point_shadow_count], 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        _shadow_shader_point->SetFV3("lightPos", glm::value_ptr(light.second.position));
+        _shadow_shader_point->SetFloat("far_plane", 100.0f);
+        auto vps = getPointLightVP(light.second.position);
+        light.second.vps = vps;
+        light.second.shadow_map_idx = _point_shadow_count;
+        for (int i = 0; i < vps.size(); i++) {
+          // each face
+          std::string uniform_name = "shadowMatrices[" + std::to_string(i) + "]";
+          _shadow_shader_point->SetFM4(uniform_name.c_str(), glm::value_ptr(vps[i]));
+        }
+
+        for (auto& obj : _render_objects) {
+          _shadow_shader_point->SetFM4("model", glm::value_ptr(obj.second.transform));
+
+          auto mesh = GetModelResource(obj.second.mesh);
+          mesh->Draw(_shadow_shader_point);
+        }
+
+        _point_shadow_count++;
+      }
+    }
+
+    glCullFace(GL_BACK);
+    glDisable(GL_CULL_FACE);
+
+    // direction_light
+    _shadow_shader_direction->Use();
+    _diretion_shadow_count = 0;
+    for (auto& light : _direction_light) {
+      if (light.second.enable_shadow) {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _diretion_shadow_map[_diretion_shadow_count], 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        auto view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), light.second.direction, glm::vec3(0.0f, 1.0f, 0.0f));
+        auto projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, -20.0f, 20.0f);
+        light.second.vp = projection * view;
+        light.second.shadow_map_idx = _diretion_shadow_count;
+        auto vp = projection * view;
+        _shadow_shader_direction->SetFM4("shadow_vp", glm::value_ptr(light.second.vp));
+        for (auto& obj : _render_objects) {
+          _shadow_shader_direction->SetFM4("model", glm::value_ptr(obj.second.transform));
+
+          auto mesh = GetModelResource(obj.second.mesh);
+          mesh->Draw(_shadow_shader_point);
+        }
+
+        _diretion_shadow_count++;
+      }
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
   }
   void Render::RenderGbuffer()
   {
@@ -194,7 +288,14 @@ namespace render {
       std::string base_name = "point_light_list[" + std::to_string(idx) + "]";
       _light->SetFV3((base_name + ".position").c_str(), glm::value_ptr(p_light.second.position));
       _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(p_light.second.color));
+      _light->SetInt((base_name + ".shadow_map_idx").c_str(), p_light.second.shadow_map_idx);
       idx++;
+    }
+
+    int point_shadow_delta_base = 10;
+    for (int i = 0; i < _point_shadow_count; i++) {
+      glActiveTexture(GL_TEXTURE0 + point_shadow_delta_base + i);
+      glBindTexture(GL_TEXTURE_CUBE_MAP, _point_shadow_map[i]);
     }
 
     _light->SetInt("direction_light_count", _direction_light.size());
@@ -203,7 +304,15 @@ namespace render {
       std::string base_name = "direction_light_list[" + std::to_string(idx) + "]";
       _light->SetFV3((base_name + ".direction").c_str(), glm::value_ptr(d_light.second.direction));
       _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(d_light.second.color));
+      _light->SetFM4((base_name + ".shadow_vp").c_str(), glm::value_ptr(d_light.second.vp));
+      _light->SetInt((base_name + ".shadow_map_idx").c_str(), d_light.second.shadow_map_idx);
       idx++;
+    }
+
+    int direction_shadow_delta_base = 15;
+    for (int i = 0; i < _diretion_shadow_count; i++) {
+      glActiveTexture(GL_TEXTURE0 + direction_shadow_delta_base + i);
+      glBindTexture(GL_TEXTURE_2D, _diretion_shadow_map[i]);
     }
 
     auto position_ao_texture = GetTexture2DResource(_g_position_ao);
@@ -213,19 +322,29 @@ namespace render {
     auto prefilter_texture = GetTextureCubeResource(_pbr_texture_prefilter);
     auto brdf_texture = GetTexture2DResource(_pbr_texture_brdf);
 
-    position_ao_texture->BindToTexture(0);
-    albedo_roughness_texture->BindToTexture(1);
-    normal_metalic_texture->BindToTexture(2);
-    irradiance_texture->BindToTexture(3);
-    prefilter_texture->BindToTexture(4);
-    brdf_texture->BindToTexture(5);
+    position_ao_texture->BindToTexture(1);
+    albedo_roughness_texture->BindToTexture(2);
+    normal_metalic_texture->BindToTexture(3);
+    irradiance_texture->BindToTexture(4);
+    prefilter_texture->BindToTexture(5);
+    brdf_texture->BindToTexture(6);
 
-    _light->SetInt("gPosAO", 0);
-    _light->SetInt("gAlbedoRoughness", 1);
-    _light->SetInt("gNormalMetalic", 2);
-    _light->SetInt("irradiance_map", 3);
-    _light->SetInt("prefilter_map", 4);
-    _light->SetInt("brdf_lut", 5);
+    _light->SetInt("gPosAO", 1);
+    _light->SetInt("gAlbedoRoughness", 2);
+    _light->SetInt("gNormalMetalic", 3);
+    _light->SetInt("irradiance_map", 4);
+    _light->SetInt("prefilter_map", 5);
+    _light->SetInt("brdf_lut", 6);
+
+    for (int i = 0; i < 5; i++) {
+      std::string base_name = "point_light_shadow[" + std::to_string(i) + "]";
+      _light->SetInt(base_name.c_str(), point_shadow_delta_base + i);
+    }
+
+    for (int i = 0; i < 5; i++) {
+      std::string base_name = "direction_light_shadow[" + std::to_string(i) + "]";
+      _light->SetInt(base_name.c_str(), direction_shadow_delta_base + i);
+    }
 
     renderQuad();
   }
@@ -400,6 +519,8 @@ namespace render {
     delete _gbuffer;
     delete _light;
     delete _skybox;
+    delete _shadow_shader_point;
+    delete _shadow_shader_direction;
 
     _pbr_hdr_preprocess = new Shader("shader/cube_sampler_vs.glsl", "shader/pbr_hdr_preprocess_fs.glsl");
     _pbr_irradiance = new Shader("shader/cube_sampler_vs.glsl", "shader/pbr_irradiance_fs.glsl");
@@ -408,6 +529,8 @@ namespace render {
     _gbuffer = new Shader("shader/gbuffer_vs.glsl", "shader/gbuffer_fs.glsl");
     _light = new Shader("shader/quad_sampler_vs.glsl", "shader/pbr_fs.glsl");
     _skybox = new Shader("shader/skybox.vert", "shader/skybox.frag");
+    _shadow_shader_point = new Shader("shader/shadow_point_vs.glsl", "shader/shadow_point_gs.glsl", "shader/shadow_point_fg.glsl");
+    _shadow_shader_direction = new Shader("shader/shadow_vs.glsl", "shader/shadow_fg.glsl");
   }
   void Render::InitObjects()
   {
@@ -423,5 +546,52 @@ namespace render {
   void Render::InitPBR()
   {
     InitPbrRenderBuffer();
+  }
+  void Render::InitShadowMap()
+  {
+    _point_shadow_count = 0;
+    _diretion_shadow_count = 0;
+
+    for (int i = _point_shadow_map.size(); i < _max_point_light_shadow; i++) {
+      _point_shadow_map.push_back(GenShadowMap(2));
+    }
+
+    for (int i = _diretion_shadow_map.size(); i < _max_direction_light_shadow; i++) {
+      _diretion_shadow_map.push_back(GenShadowMap(1));
+    }
+
+    glGenFramebuffers(1, &_shadow_frame_buffer);
+  }
+  unsigned int Render::GenShadowMap(int light_type)
+  {
+    unsigned int res;
+    glGenTextures(1, &res);
+
+    if (light_type == 1) {
+      // direction light
+      glBindTexture(GL_TEXTURE_2D, res);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, _shadow_map_width, _shadow_map_height,
+        0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      glBindTexture(GL_TEXTURE_2D, 0);
+    } else if (light_type == 2) {
+      // point light
+      glBindTexture(GL_TEXTURE_CUBE_MAP, res);
+      for (int i = 0; i < 6; i++) {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+          _shadow_map_width, _shadow_map_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+      }
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+      glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    }
+
+    return res;
   }
 }

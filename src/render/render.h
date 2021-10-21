@@ -28,15 +28,27 @@ namespace render {
   };
 
   struct RenderPointLight {
+    // interface
     uint64_t light_id;
     glm::vec3 position;
     glm::vec3 color;
+    bool enable_shadow;
+
+    // inner
+    std::vector<glm::mat4> vps;
+    int shadow_map_idx;
   };
 
   struct RenderDirectionLight {
+    // interface
     uint64_t light_id;
     glm::vec3 direction;
     glm::vec3 color;
+    bool enable_shadow;
+
+    // inner
+    int shadow_map_idx;
+    glm::mat4 vp;
   };
 
   class Render {
@@ -73,6 +85,7 @@ namespace render {
     Render();
 
     // render
+    void RenderShadow();
     void RenderGbuffer();
     void RenderLight();
     void RenderSkyBox();
@@ -87,6 +100,10 @@ namespace render {
     void InitShader();
     void InitObjects();
     void InitPBR();
+    void InitShadowMap();
+
+  private:
+    unsigned int GenShadowMap(int light_type);
 
   private:
     // shader
@@ -98,6 +115,8 @@ namespace render {
     Shader* _gbuffer;
     Shader* _light;
     Shader* _skybox;
+    Shader* _shadow_shader_point;
+    Shader* _shadow_shader_direction;
 
     // pbr init texture
     uint64_t _pbr_texture_skybox;
@@ -110,6 +129,9 @@ namespace render {
 
     unsigned int _gbuffer_frame_buffer;
     unsigned int _gbuffer_render_buffer;
+
+    unsigned int _shadow_frame_buffer;
+    unsigned int _shadow_render_buffer;
 
     // gbuffer
     uint64_t _g_position_ao;
@@ -127,6 +149,11 @@ namespace render {
     // light
     std::unordered_map<uint64_t, RenderPointLight> _point_light;
     std::unordered_map<uint64_t, RenderDirectionLight> _direction_light;
+
+    int _point_shadow_count;
+    std::vector<unsigned int> _point_shadow_map;
+    int _diretion_shadow_count;
+    std::vector<unsigned int> _diretion_shadow_map;
 
   private:
     std::string _pbr_skybox_path;
@@ -147,5 +174,10 @@ namespace render {
 
     int _pbr_brdf_width;
     int _pbr_brdf_height;
+
+    int _shadow_map_width;
+    int _shadow_map_height;
+    int _max_point_light_shadow;
+    int _max_direction_light_shadow;
   };
 }

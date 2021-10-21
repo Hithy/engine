@@ -28,7 +28,7 @@ def createPointLight(color, pos):
 
 	return ent
 
-def createBall(material, pos):
+def createBall(material, pos, size):
 	comp_model = _engine.CreateComponentModel("resource/models/ball/ball.obj")
 	comp_model.SetAlbedoPath("resource/images/pbr/" + material + "/albedo.png")
 	comp_model.SetNormalPath("resource/images/pbr/" + material + "/normal.png")
@@ -38,7 +38,7 @@ def createBall(material, pos):
 
 	comp_trans = _engine.CreateComponentTransform()
 	comp_trans.SetPosition(pos)
-	comp_trans.SetScale([0.5, 0.5, 0.5])
+	comp_trans.SetScale([size, size, size])
 	# comp_trans.SetRotationEular([1.600, 4.660, 0.1])
 
 	ent = _engine.CreateEntity()
@@ -117,17 +117,20 @@ class PyScene(_engine.Scene):
 
 		# self.AddEntity(createGun())
 		# self.AddEntity(createBackpack())
-		self.AddEntity(createBall("rusted_iron", [-5.0, 0.0, -15.0]))
-		self.AddEntity(createBall("gold", [-3.0, 0.0, -15.0]))
-		self.AddEntity(createBall("grass", [-1.0, 0.0, -15.0]))
-		self.AddEntity(createBall("plastic", [1.0, 0.0, -15.0]))
-		self.AddEntity(createBall("wall", [3.0, 0.0, -15.0]))
+		self.AddEntity(createBall("rusted_iron", [-7.0, 0.0, -15.0], 0.5))
+		self.AddEntity(createBall("gold", [-4.0, 0.0, -15.0], 0.5))
+		self.AddEntity(createBall("grass", [-1.0, 0.0, -15.0], 0.5))
+		self.AddEntity(createBall("plastic", [2.0, 0.0, -15.0], 0.5))
+		self.AddEntity(createBall("wall", [5.0, 0.0, -15.0], 0.5))
 
 		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-8.0, -2.0, -20.0]))
 		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-2.0, 2.0, -20.0]))
 		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [8.0, -2.0, -20.0]))
 		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [2.0, 2.0, -20.0]))
-		self.AddEntity(createDirectionLight([10.0, 10.0, 10.0], [1.0, 0.0, 1.0]))
+		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [5.0, 1.0, -13.0]))
+		# self.AddEntity(createBall("white", [5.0, 1.0, -13.0], 0.1))
+		self.AddEntity(createDirectionLight([20.0, 20.0, 20.0], [1.0, 0.0, -0.2]))
+		# self.AddEntity(createPointLight([200.0, 200.0, 200.0], [-5.0, 1.0, -18.0]))
 
 	def add_system(self, sys):
 		super().AddSystem(sys)
