@@ -87,6 +87,7 @@ namespace render {
     // render
     void RenderShadow();
     void RenderGbuffer();
+    void RenderSSAO();
     void RenderLight();
     void RenderSkyBox();
 
@@ -101,6 +102,7 @@ namespace render {
     void InitObjects();
     void InitPBR();
     void InitShadowMap();
+    void InitSSAO();
 
   private:
     unsigned int GenShadowMap(int light_type);
@@ -113,6 +115,7 @@ namespace render {
     Shader* _pbr_brdf;
 
     Shader* _gbuffer;
+    Shader* _ssao;
     Shader* _light;
     Shader* _skybox;
     Shader* _shadow_shader_point;
@@ -133,10 +136,19 @@ namespace render {
     unsigned int _shadow_frame_buffer;
     unsigned int _shadow_render_buffer;
 
+    // ssao
+    unsigned int _ssao_map;
+    unsigned int _ssao_noise_map;
+    unsigned int _ssao_frame_buffer;
+    unsigned int _ssao_render_buffer;
+    std::vector<glm::vec3> _ssao_kernal;
+
     // gbuffer
     uint64_t _g_position_ao;
     uint64_t _g_albedo_roughness;
     uint64_t _g_normal_metalic;
+    uint64_t _g_view_position;
+    uint64_t _g_view_normal;
 
     // active camera
     glm::mat4 _camera_view;
@@ -179,5 +191,18 @@ namespace render {
     int _shadow_map_height;
     int _max_point_light_shadow;
     int _max_direction_light_shadow;
+
+  private:
+    bool _enable_shadow;
+    bool _enable_ssao;
+
+  private:
+    float _dt_shadow_pass;
+    float _dt_gbuffer_pass;
+    float _dt_ssao_pass;
+    float _dt_light_pass;
+    float _dt_skybox_pass;
+    float _dt_imgui_pass;
+
   };
 }

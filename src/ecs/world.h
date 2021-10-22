@@ -67,6 +67,9 @@ public:
   void Init();
   void Run();
 
+  void ToggleMouse();
+  bool IsMouseCaptured();
+
   WorldContext ctx;
 
 private:
@@ -86,5 +89,7 @@ private:
   std::vector<Scene *> _scenes;
 
   GLFWwindow *_window;
+
+  bool _capture_mouse;
 };
 } // namespace ECS

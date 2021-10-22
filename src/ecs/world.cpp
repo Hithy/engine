@@ -15,6 +15,10 @@
 #include "render/Model.h"
 #include "render/resource_mgr.h"
 
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
 namespace ECS {
 
 static void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
@@ -23,8 +27,10 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
 
   auto &world = World::GetInstance();
 
-  world.ctx.input.move_delta_x = xpos - lastX;
-  world.ctx.input.move_delta_y = ypos - lastY;
+  if (world.IsMouseCaptured()) {
+    world.ctx.input.move_delta_x = xpos - lastX;
+    world.ctx.input.move_delta_y = ypos - lastY;
+  }
 
   lastX = xpos;
   lastY = ypos;
@@ -33,9 +39,10 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
 static void scroll_callback(GLFWwindow *window, double xoffset,
                             double yoffset) {
   auto &world = World::GetInstance();
-
-  world.ctx.input.scroll_delta_x = xoffset;
-  world.ctx.input.scroll_delta_y = yoffset;
+  if (world.IsMouseCaptured()) {
+    world.ctx.input.scroll_delta_x = xoffset;
+    world.ctx.input.scroll_delta_y = yoffset;
+  }
 }
 
 static void framebuffer_size_callback(GLFWwindow *window, int width,
@@ -47,6 +54,8 @@ World::World() {
   ctx.title = "hello_engine";
   ctx.window_width = 1920;
   ctx.window_height = 1080;
+
+  _capture_mouse = false;
 }
 
 void World::initPython()
@@ -88,7 +97,7 @@ void World::initGL() {
     throw "fail to glad load gl loader\n";
   }
 
-  glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  // glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   glfwSetCursorPosCallback(_window, mouse_callback);
   glfwSetScrollCallback(_window, scroll_callback);
 
@@ -98,6 +107,10 @@ void World::initGL() {
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, 0);
+
+  ImGui::CreateContext();
+  ImGui_ImplGlfw_InitForOpenGL(_window, true);
+  ImGui_ImplOpenGL3_Init("#version 330");
 }
 
 void World::initPhysx() {}
@@ -113,8 +126,16 @@ void World::startScript()
 }
 
 void World::updateInput() {
-  if (glfwGetKey(_window, GLFW_KEY_Q) == GLFW_PRESS) {
+  if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(_window, true);
+  }
+
+  if (!IsMouseCaptured()) {
+    return;
+  }
+
+  if (glfwGetKey(_window, GLFW_KEY_Q) == GLFW_PRESS) {
+    ToggleMouse();
   }
 
   ctx.input.W_Status = glfwGetKey(_window, GLFW_KEY_W);
@@ -139,15 +160,34 @@ void World::logic() {
 }
 
 void World::render() {
-  /*glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, ctx.window_width, ctx.window_height);
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);*/
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
 
+  ImGui::Begin("Contrl Panel");
+  ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+  if (ImGui::Button("Control Camera")) {
+    ToggleMouse();
+  }
   render::Render::GetInstance().DoRender();
+
+  ImGui::End();
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
   glfwSwapBuffers(_window);
   glfwPollEvents();
+}
+
+void World::ToggleMouse()
+{
+  _capture_mouse = !_capture_mouse;
+  glfwSetInputMode(_window, GLFW_CURSOR, _capture_mouse ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+}
+
+bool World::IsMouseCaptured()
+{
+  return _capture_mouse;
 }
 
 void World::AddScene(Scene* scn)

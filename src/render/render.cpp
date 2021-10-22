@@ -1,5 +1,7 @@
 #include <memory>
 #include <vector>
+#include <random>
+#include <chrono>
 
 #include "render.h"
 
@@ -9,6 +11,7 @@
 #include "resource_mgr.h"
 #include "resource_utils.h"
 #include "utils.h"
+#include "imgui.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -56,10 +59,36 @@ namespace render {
 
   void Render::DoRender()
   {
-    RenderShadow();
+    auto begin_time = std::chrono::steady_clock::now();
+    if (_enable_shadow) {
+      RenderShadow();
+    }
+    auto end_shadow = std::chrono::steady_clock::now();
     RenderGbuffer();
+    auto end_gbuffer = std::chrono::steady_clock::now();
+    if (_enable_ssao) {
+      RenderSSAO();
+    }
+    auto end_ssao = std::chrono::steady_clock::now();
     RenderLight();
+    auto end_light = std::chrono::steady_clock::now();
     RenderSkyBox();
+    auto end_skybox = std::chrono::steady_clock::now();
+
+    _dt_shadow_pass = std::chrono::duration<float, std::milli>(end_shadow - begin_time).count();
+    _dt_gbuffer_pass = std::chrono::duration<float, std::milli>(end_gbuffer - end_shadow).count();
+    _dt_ssao_pass = std::chrono::duration<float, std::milli>(end_ssao - end_gbuffer).count();
+    _dt_light_pass = std::chrono::duration<float, std::milli>(end_light - end_ssao).count();
+    _dt_skybox_pass = std::chrono::duration<float, std::milli>(end_skybox - end_light).count();
+
+    ImGui::Text("shadow pass: %.3f ms", _dt_shadow_pass);
+    ImGui::Text("gbuffer pass: %.3f ms", _dt_gbuffer_pass);
+    ImGui::Text("ssao pass: %.3f ms", _dt_ssao_pass);
+    ImGui::Text("light pass: %.3f ms", _dt_light_pass);
+    ImGui::Text("skybox pass: %.3f ms", _dt_skybox_pass);
+
+    ImGui::Checkbox("Enable Shadow", &_enable_shadow);
+    ImGui::Checkbox("Enable SSAO", &_enable_ssao);
   }
 
   void Render::Init()
@@ -68,6 +97,7 @@ namespace render {
     InitObjects();
     InitPBR();
     InitShadowMap();
+    InitSSAO();
   }
 
   void Render::SetPbrSkyBox(const char* path)
@@ -159,6 +189,9 @@ namespace render {
     _max_point_light_shadow = 3;
     _shadow_map_width = 2048;
     _shadow_map_height = 2048;
+
+    _enable_shadow = true;
+    _enable_ssao = true;
   }
   void Render::RenderShadow()
   {
@@ -273,6 +306,39 @@ namespace render {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
+  void Render::RenderSSAO()
+  {
+    _ssao->Use();
+    glBindFramebuffer(GL_FRAMEBUFFER, _ssao_frame_buffer);
+    glViewport(0, 0, _windows_width, _windows_height);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // gbuffer
+    auto view_postion_texture = GetTexture2DResource(_g_view_position);
+    auto view_normal_texture = GetTexture2DResource(_g_view_normal);
+    view_postion_texture->BindToTexture(1);
+    view_normal_texture->BindToTexture(2);
+    _ssao->SetInt("gViewPos", 1);
+    _ssao->SetInt("gViewNor", 2);
+
+    // noise
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, _ssao_noise_map);
+    _ssao->SetInt("texture_noise", 3);
+
+
+    // kernel
+    for (int i = 0; i < _ssao_kernal.size(); i++) {
+      std::string idx_name = "samples[" + std::to_string(i) + "]";
+      _ssao->SetFV3(idx_name.c_str(), glm::value_ptr(_ssao_kernal[i]));
+    }
+
+    // view, projection
+    _ssao->SetFM4("projection", glm::value_ptr(_camera_projection));
+
+    renderQuad();
+  }
   void Render::RenderLight()
   {
     _light->Use();
@@ -281,6 +347,9 @@ namespace render {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     _light->SetFV3("cam_pos", glm::value_ptr(_camera_pos));
+
+    _light->SetInt("enable_ssao", _enable_ssao ? 1 : 0);
+    _light->SetInt("enable_shadow", _enable_shadow ? 1 : 0);
 
     _light->SetInt("point_light_count", _point_light.size());
     int idx = 0;
@@ -336,6 +405,11 @@ namespace render {
     _light->SetInt("prefilter_map", 5);
     _light->SetInt("brdf_lut", 6);
 
+    // SSAO
+    glActiveTexture(GL_TEXTURE7);
+    glBindTexture(GL_TEXTURE_2D, _ssao_map);
+    _light->SetInt("gSSAO", 7);
+
     for (int i = 0; i < 5; i++) {
       std::string base_name = "point_light_shadow[" + std::to_string(i) + "]";
       _light->SetInt(base_name.c_str(), point_shadow_delta_base + i);
@@ -385,6 +459,8 @@ namespace render {
     auto position_ao_texture = GetTexture2DResource(_g_position_ao);
     auto albedo_roughness_texture = GetTexture2DResource(_g_albedo_roughness);
     auto normal_metalic_texture = GetTexture2DResource(_g_normal_metalic);
+    auto view_position_texture = GetTexture2DResource(_g_view_position);
+    auto view_normal_texture = GetTexture2DResource(_g_view_normal);
 
     glBindFramebuffer(GL_FRAMEBUFFER, _gbuffer_frame_buffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
@@ -393,8 +469,12 @@ namespace render {
       albedo_roughness_texture->GetTexture(), 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D,
       normal_metalic_texture->GetTexture(), 0);
-    unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-    glDrawBuffers(3, attachments);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D,
+      view_position_texture->GetTexture(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D,
+      view_normal_texture->GetTexture(), 0);
+    unsigned int attachments[5] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+    glDrawBuffers(5, attachments);
     glBindRenderbuffer(GL_RENDERBUFFER, _gbuffer_render_buffer);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, _windows_width, _windows_width);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _gbuffer_render_buffer);
@@ -531,6 +611,7 @@ namespace render {
     _skybox = new Shader("shader/skybox.vert", "shader/skybox.frag");
     _shadow_shader_point = new Shader("shader/shadow_point_vs.glsl", "shader/shadow_point_gs.glsl", "shader/shadow_point_fg.glsl");
     _shadow_shader_direction = new Shader("shader/shadow_vs.glsl", "shader/shadow_fg.glsl");
+    _ssao = new Shader("shader/quad_sampler_vs.glsl", "shader/ssao_fs.glsl");
   }
   void Render::InitObjects()
   {
@@ -542,6 +623,8 @@ namespace render {
     _g_position_ao = GenTexture2D(_windows_width, _windows_height, false, 4);
     _g_albedo_roughness = GenTexture2D(_windows_width, _windows_height, false, 4);
     _g_normal_metalic = GenTexture2D(_windows_width, _windows_height, false, 4);
+    _g_view_position = GenTexture2D(_windows_width, _windows_height);
+    _g_view_normal = GenTexture2D(_windows_width, _windows_height);
   }
   void Render::InitPBR()
   {
@@ -561,6 +644,83 @@ namespace render {
     }
 
     glGenFramebuffers(1, &_shadow_frame_buffer);
+  }
+  std::vector<glm::vec3> GenSSAONoise(int width, int height) {
+    std::vector<glm::vec3> res;
+
+    std::uniform_real_distribution random_floats(0.0f, 1.0f);
+    std::default_random_engine generator;
+    std::vector<glm::vec3> ssaoNoise;
+
+    for (int i = 0; i < width * height; i++) {
+      res.emplace_back(
+        random_floats(generator) * 2.0f - 1.0f, 
+        random_floats(generator) * 2.0f - 1.0f, 
+        0.0f);
+    }
+
+    return res;
+  }
+  std::vector<glm::vec3> GenSSAOKernel(int width, int height) {
+    std::vector<glm::vec3> res;
+
+    std::uniform_real_distribution random_floats(0.0f, 1.0f);
+    std::default_random_engine generator;
+    std::vector<glm::vec3> ssaoNoise;
+
+    auto lerp = [](float a, float b, float ratio) {
+      return a + ratio * (b - a);
+    };
+
+    int sampler_count = width * height;
+    for (int i = 0; i < sampler_count; i++) {
+      glm::vec3 sampler(
+        random_floats(generator) * 2.0f - 1.0f,
+        random_floats(generator) * 2.0f - 1.0f,
+        random_floats(generator)
+      );
+
+      sampler = glm::normalize(sampler);
+      sampler *= random_floats(generator);
+
+      float scale = (float)i / sampler_count;
+      sampler *= lerp(0.1f, 1.0f, scale * scale);
+
+      res.push_back(sampler);
+    }
+
+    return res;
+  }
+  void Render::InitSSAO()
+  {
+    _ssao_map = render::genTexture2D(_windows_width, _windows_height, false, 1);
+
+    glGenFramebuffers(1, &_ssao_frame_buffer);
+    glGenRenderbuffers(1, &_ssao_render_buffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, _ssao_frame_buffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, _ssao_render_buffer);
+
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, _windows_width, _windows_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _ssao_render_buffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _ssao_map, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    // noise
+    auto noise_list = GenSSAONoise(4, 4);
+    glGenTextures(1, &_ssao_noise_map);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _ssao_noise_map);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, noise_list.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // kernel
+    _ssao_kernal = GenSSAOKernel(16, 16);
   }
   unsigned int Render::GenShadowMap(int light_type)
   {

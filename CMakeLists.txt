@@ -6,8 +6,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
 
 file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h)
+set(IMGUI_FILES
+  "3rd/imgui/imgui.cpp"
+  "3rd/imgui/imgui_draw.cpp"
+  "3rd/imgui/imgui_tables.cpp"
+  "3rd/imgui/imgui_widgets.cpp"
+  "3rd/imgui/imgui_demo.cpp"
+  "3rd/imgui/backends/imgui_impl_opengl3.cpp"
+  "3rd/imgui/backends/imgui_impl_glfw.cpp"
+  )
 add_executable(engine
   ${SRC_FILES}
+  ${IMGUI_FILES}
   "3rd/glad/glad.c")
 
 function(fetch_git_repo path name)
@@ -50,6 +60,7 @@ endif()
 
 target_include_directories(engine PUBLIC "src")
 target_include_directories(engine PUBLIC "3rd/include")
+target_include_directories(engine PUBLIC "3rd/imgui")
 target_link_directories(engine PUBLIC "3rd/lib/compile")
 
 if (UNIX)

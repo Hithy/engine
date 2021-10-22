@@ -37,53 +37,36 @@ uniform sampler2D brdf_lut;
 uniform sampler2D gPosAO;
 uniform sampler2D gAlbedoRoughness;
 uniform sampler2D gNormalMetalic;
+uniform sampler2D gSSAO;
+
+// switch
+uniform int enable_ssao;
+uniform int enable_shadow;
 
 in vec2 TexCoords;
 out vec4 FragColor;
 
+// pbr
 float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
 
-float CalcDirShadow(DLight light, vec3 pos, vec3 normal)
-{
-  float shadow_ratio = 0.0f;
-  if (light.shadow_map_idx >= 0) {
-    vec4 shadow_tex = light.shadow_vp * vec4(pos, 1.0f);
-    vec3 projCoords = shadow_tex.xyz / shadow_tex.w;
-    projCoords = projCoords * 0.5 + 0.5;
-
-    vec2 texelSize = 1.0 / textureSize(direction_light_shadow[light.shadow_map_idx], 0);
-    float bias = max(0.05 * (1.0 - pow(dot(normal, normalize(-light.direction)), 2.0)), 0.005);
-    
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(direction_light_shadow[light.shadow_map_idx], projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow_ratio += projCoords.z - bias > pcfDepth ? 1.0 : 0.0;        
-        }    
-    }
-    shadow_ratio /= 9.0;
-
-    /*
-    float pcfDepth = texture(direction_light_shadow[light.shadow_map_idx], projCoords.xy).r; 
-    shadow_ratio += projCoords.z > pcfDepth ? 1.0 : 0.0;     
-    */
-  }
-
-  return shadow_ratio;
-}
+// shadow
+float CalcDirShadow(DLight light, vec3 pos, vec3 normal);
+float CalcPointShadow(PLight light, vec3 L, float dist);
 
 void main() {
   vec4 pos_ao = texture(gPosAO, TexCoords);
   vec4 albedo_roughness = texture(gAlbedoRoughness, TexCoords);
   vec4 normal_metalic = texture(gNormalMetalic, TexCoords);
-
+  float ssao = 1.0;
+  if (enable_ssao > 0) {
+    ssao = texture(gSSAO, TexCoords).r;
+  }
   float roughness = albedo_roughness.a;
-  vec3 albedo = pow(albedo_roughness.rgb, vec3(2.2));
+  vec3 albedo = pow(albedo_roughness.rgb, vec3(2.2)) * ssao;
 
   vec3 N = normal_metalic.rgb;
   float metallic = normal_metalic.a;
@@ -127,15 +110,12 @@ void main() {
     vec3 inner = (kD * albedo / PI) + numerator / denominator;
     vec3 LO = inner * radiance * LdotN;
 
-    if (light.shadow_map_idx >= 0) {
-      float shadow_depth = texture(point_light_shadow[light.shadow_map_idx], -L).r * 100.0f;
-      float bias = 0.05;
-      if (shadow_depth + bias < dist) {
-        LO *= 0.0;
-      }
+    float shadow_ratio = 0.0;
+    if (enable_shadow > 0) {
+      shadow_ratio = CalcPointShadow(light, L, dist);
     }
 
-    sum_color += LO;
+    sum_color += LO * (1.0 - shadow_ratio);
   }
 
   // direction light
@@ -163,7 +143,10 @@ void main() {
     vec3 inner = (kD * albedo / PI) + numerator / denominator;
     vec3 LO = inner * radiance * LdotN;
 
-    float shadow_ratio = CalcDirShadow(light, WorldPos, N);
+    float shadow_ratio = 0.0;
+    if (enable_shadow > 0) {
+      shadow_ratio = CalcDirShadow(light, WorldPos, N);
+    }
 
     sum_color += LO * (1.0 - shadow_ratio);
   }
@@ -228,4 +211,44 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
   float tmp = (NdotH2 * (a2 - 1.0) + 1.0);
 
   return a2 / (PI * tmp * tmp);
+}
+
+float CalcDirShadow(DLight light, vec3 pos, vec3 normal)
+{
+  float shadow_ratio = 0.0f;
+  if (light.shadow_map_idx >= 0) {
+    vec4 shadow_tex = light.shadow_vp * vec4(pos, 1.0f);
+    vec3 projCoords = shadow_tex.xyz / shadow_tex.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    vec2 texelSize = 1.0 / textureSize(direction_light_shadow[light.shadow_map_idx], 0);
+    float bias = max(0.05 * (1.0 - pow(dot(normal, normalize(-light.direction)), 2.0)), 0.005);
+    
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(direction_light_shadow[light.shadow_map_idx], projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow_ratio += projCoords.z - bias > pcfDepth ? 1.0 : 0.0;        
+        }    
+    }
+    shadow_ratio /= 9.0;
+  }
+
+  return shadow_ratio;
+}
+
+float CalcPointShadow(PLight light, vec3 L, float dist)
+{
+  float shadow_ratio = 0.0;
+
+  if (light.shadow_map_idx >= 0) {
+    float shadow_depth = texture(point_light_shadow[light.shadow_map_idx], -L).r * 100.0f;
+    float bias = 0.05;
+    if (shadow_depth + bias < dist) {
+      shadow_ratio = 1.0;
+    }
+  }
+
+  return shadow_ratio;
 }

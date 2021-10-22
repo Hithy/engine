@@ -14,13 +14,18 @@ out vec3 WorldPos;
 out vec2 TexCoords;
 out mat3 TBN;
 
+out vec3 ViewPos;
+out mat3 TBN_View;
+
 void main () {
   WorldPos = (model * vec4(aPos, 1.0f)).xyz;
+  ViewPos = (view * model * vec4(aPos, 1.0f)).xyz;
   TexCoords = aTex;
   gl_Position = projection * view * vec4(WorldPos, 1.0);
 
-  vec3 T = normalize(vec3(model * vec4(aTangent,   0.0)));
-  vec3 B = normalize(vec3(model * vec4(aBitangent, 0.0)));
-  vec3 N = normalize(vec3(model * vec4(aNormal,    0.0)));
-  TBN = mat3(T, B, N);
+  vec3 T = normalize(aTangent);
+  vec3 B = normalize(aBitangent);
+  vec3 N = normalize(aNormal);
+  TBN = mat3(transpose(inverse(model))) * mat3(T, B, N);
+  TBN_View = mat3(transpose(inverse(view))) * TBN;
 }
