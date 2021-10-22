@@ -5,25 +5,25 @@ const float PI = 3.14159265359;
 struct PLight {
   vec3 position;
   vec3 diffuse;
-  int shadow_map_idx;
+  int enable_shadow;
+  samplerCube shadow_map;
 };
 
 struct DLight {
   vec3 direction;
   vec3 diffuse;
   mat4 shadow_vp;
-  int shadow_map_idx;
+  int enable_shadow;
+  sampler2D shadow_map;
 };
 
 #define POINT_LIGHT_MAX_COUNT 10
 uniform int point_light_count;
 uniform PLight point_light_list[POINT_LIGHT_MAX_COUNT];
-uniform samplerCube point_light_shadow[5];
 
 #define DIRECTION_LIGHT_MAX_COUNT 10
 uniform int direction_light_count;
 uniform DLight direction_light_list[DIRECTION_LIGHT_MAX_COUNT];
-uniform sampler2D direction_light_shadow[5];
 
 // viewer
 uniform vec3 cam_pos;
@@ -84,12 +84,11 @@ void main() {
 
   // point light
   for (int i=0; i<point_light_count; i++) {
-    PLight light = point_light_list[i];
-    vec3 L = normalize(light.position - WorldPos);
+    vec3 L = normalize(point_light_list[i].position - WorldPos);
     vec3 H = normalize(L + V);
 
-    vec3 light_color = light.diffuse;
-    float dist = length(light.position - WorldPos);
+    vec3 light_color = point_light_list[i].diffuse;
+    float dist = length(point_light_list[i].position - WorldPos);
     float attenuation = 1.0 / (dist * dist);
     vec3 radiance = light_color * attenuation;
 
@@ -112,7 +111,7 @@ void main() {
 
     float shadow_ratio = 0.0;
     if (enable_shadow > 0) {
-      shadow_ratio = CalcPointShadow(light, L, dist);
+      shadow_ratio = CalcPointShadow(point_light_list[i], L, dist);
     }
 
     sum_color += LO * (1.0 - shadow_ratio);
@@ -120,11 +119,10 @@ void main() {
 
   // direction light
   for (int i=0; i<direction_light_count; i++) {
-    DLight light = direction_light_list[i];
-    vec3 L = normalize(-light.direction);
+    vec3 L = normalize(-direction_light_list[i].direction);
     vec3 H = normalize(L + V);
 
-    vec3 radiance = light.diffuse;
+    vec3 radiance = direction_light_list[i].diffuse;
 
     float NDF = DistributionGGX(N, H, roughness);
     float G = GeometrySmith(N, V, L, roughness);
@@ -145,7 +143,7 @@ void main() {
 
     float shadow_ratio = 0.0;
     if (enable_shadow > 0) {
-      shadow_ratio = CalcDirShadow(light, WorldPos, N);
+      shadow_ratio = CalcDirShadow(direction_light_list[i], WorldPos, N);
     }
 
     sum_color += LO * (1.0 - shadow_ratio);
@@ -216,19 +214,19 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
 float CalcDirShadow(DLight light, vec3 pos, vec3 normal)
 {
   float shadow_ratio = 0.0f;
-  if (light.shadow_map_idx >= 0) {
+  if (light.enable_shadow > 0) {
     vec4 shadow_tex = light.shadow_vp * vec4(pos, 1.0f);
     vec3 projCoords = shadow_tex.xyz / shadow_tex.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    vec2 texelSize = 1.0 / textureSize(direction_light_shadow[light.shadow_map_idx], 0);
+    vec2 texelSize = 1.0 / textureSize(light.shadow_map, 0);
     float bias = max(0.05 * (1.0 - pow(dot(normal, normalize(-light.direction)), 2.0)), 0.005);
     
     for(int x = -1; x <= 1; ++x)
     {
         for(int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture(direction_light_shadow[light.shadow_map_idx], projCoords.xy + vec2(x, y) * texelSize).r; 
+            float pcfDepth = texture(light.shadow_map, projCoords.xy + vec2(x, y) * texelSize).r; 
             shadow_ratio += projCoords.z - bias > pcfDepth ? 1.0 : 0.0;        
         }    
     }
@@ -242,8 +240,8 @@ float CalcPointShadow(PLight light, vec3 L, float dist)
 {
   float shadow_ratio = 0.0;
 
-  if (light.shadow_map_idx >= 0) {
-    float shadow_depth = texture(point_light_shadow[light.shadow_map_idx], -L).r * 100.0f;
+  if (light.enable_shadow > 0) {
+    float shadow_depth = texture(light.shadow_map, -L).r * 100.0f;
     float bias = 0.05;
     if (shadow_depth + bias < dist) {
       shadow_ratio = 1.0;

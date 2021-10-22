@@ -351,37 +351,51 @@ namespace render {
     _light->SetInt("enable_ssao", _enable_ssao ? 1 : 0);
     _light->SetInt("enable_shadow", _enable_shadow ? 1 : 0);
 
+    // shadow
+    int point_shadow_delta_base = 10;
+    int direction_shadow_delta_base = 20;
+    
+    for (int i = 0; i < 10; i++) {
+      // set default value to uniform
+      std::string point_light_map = "point_light_list[" + std::to_string(i) + "].shadow_map";
+      std::string direction_light_map = "direction_light_list[" + std::to_string(i) + "].shadow_map";
+      _light->SetInt(point_light_map.c_str(), point_shadow_delta_base);
+      _light->SetInt(direction_light_map.c_str(), direction_shadow_delta_base);
+    }
+
     _light->SetInt("point_light_count", _point_light.size());
     int idx = 0;
+    int shadow_idx = 0;
     for (const auto& p_light : _point_light) {
       std::string base_name = "point_light_list[" + std::to_string(idx) + "]";
       _light->SetFV3((base_name + ".position").c_str(), glm::value_ptr(p_light.second.position));
       _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(p_light.second.color));
-      _light->SetInt((base_name + ".shadow_map_idx").c_str(), p_light.second.shadow_map_idx);
+      _light->SetInt((base_name + ".enable_shadow").c_str(), p_light.second.enable_shadow ? 1 : 0);
+      if (p_light.second.enable_shadow) {
+        glActiveTexture(GL_TEXTURE0 + point_shadow_delta_base + shadow_idx);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, _point_shadow_map[p_light.second.shadow_map_idx]);
+        _light->SetInt((base_name + ".shadow_map").c_str(), point_shadow_delta_base + shadow_idx);
+        shadow_idx++;
+      }
       idx++;
-    }
-
-    int point_shadow_delta_base = 10;
-    for (int i = 0; i < _point_shadow_count; i++) {
-      glActiveTexture(GL_TEXTURE0 + point_shadow_delta_base + i);
-      glBindTexture(GL_TEXTURE_CUBE_MAP, _point_shadow_map[i]);
     }
 
     _light->SetInt("direction_light_count", _direction_light.size());
     idx = 0;
+    shadow_idx = 0;
     for (const auto& d_light : _direction_light) {
       std::string base_name = "direction_light_list[" + std::to_string(idx) + "]";
       _light->SetFV3((base_name + ".direction").c_str(), glm::value_ptr(d_light.second.direction));
       _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(d_light.second.color));
       _light->SetFM4((base_name + ".shadow_vp").c_str(), glm::value_ptr(d_light.second.vp));
-      _light->SetInt((base_name + ".shadow_map_idx").c_str(), d_light.second.shadow_map_idx);
+      _light->SetInt((base_name + ".enable_shadow").c_str(), d_light.second.enable_shadow ? 1 : 0);
+      if (d_light.second.enable_shadow) {
+        glActiveTexture(GL_TEXTURE0 + direction_shadow_delta_base + shadow_idx);
+        glBindTexture(GL_TEXTURE_2D, _diretion_shadow_map[d_light.second.shadow_map_idx]);
+        _light->SetInt((base_name + ".shadow_map").c_str(), direction_shadow_delta_base + shadow_idx);
+        shadow_idx++;
+      }
       idx++;
-    }
-
-    int direction_shadow_delta_base = 15;
-    for (int i = 0; i < _diretion_shadow_count; i++) {
-      glActiveTexture(GL_TEXTURE0 + direction_shadow_delta_base + i);
-      glBindTexture(GL_TEXTURE_2D, _diretion_shadow_map[i]);
     }
 
     auto position_ao_texture = GetTexture2DResource(_g_position_ao);
@@ -409,16 +423,6 @@ namespace render {
     glActiveTexture(GL_TEXTURE7);
     glBindTexture(GL_TEXTURE_2D, _ssao_map);
     _light->SetInt("gSSAO", 7);
-
-    for (int i = 0; i < 5; i++) {
-      std::string base_name = "point_light_shadow[" + std::to_string(i) + "]";
-      _light->SetInt(base_name.c_str(), point_shadow_delta_base + i);
-    }
-
-    for (int i = 0; i < 5; i++) {
-      std::string base_name = "direction_light_shadow[" + std::to_string(i) + "]";
-      _light->SetInt(base_name.c_str(), direction_shadow_delta_base + i);
-    }
 
     renderQuad();
   }
