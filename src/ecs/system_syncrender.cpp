@@ -20,8 +20,7 @@ namespace ECS {
   {
     auto& render = render::Render::GetInstance();
 
-    // render.SetPbrSkyBox("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr");
-    render.SetPbrSkyBox("resource/images/hdr/newport_loft.hdr");
+    render.SetPbrSkyBox(_scene->GetIBLHdrPath().c_str());
     render.PrepareRender();
   }
   void SystemSyncRender::Stop()
@@ -93,7 +92,7 @@ namespace ECS {
         point_light.light_id = base_ent->GetID();
         point_light.position = comp_trans->GetPosition();
         point_light.color = comp_light->GetLightParam().diffuse;
-        point_light.enable_shadow = true;
+        point_light.enable_shadow = comp_light->IsShadowEnabled();
 
         render.AddPointLight(point_light);
       } else if (comp_light->GetLightType() == LightType_Direction) {
@@ -102,7 +101,7 @@ namespace ECS {
         direction_light.light_id = base_ent->GetID();
         direction_light.direction = glm::mat3(comp_trans->GetTransform()) * glm::vec3(0.0f, 0.0f, 1.0f);
         direction_light.color = comp_light->GetLightParam().diffuse;
-        direction_light.enable_shadow = true;
+        direction_light.enable_shadow = comp_light->IsShadowEnabled();
 
         render.AddDirectionLight(direction_light);
       }

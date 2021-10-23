@@ -8,7 +8,8 @@ namespace ECS {
     : Component(ComponentType_Light), 
     _type(static_cast<LightType>(type)), 
     _light(), 
-    _shadow_texture(0)
+    _shadow_texture(0),
+    _enable_shadow(false)
   {
   }
   ComponentLight::~ComponentLight()
@@ -30,10 +31,17 @@ namespace ECS {
     _light.diffuse = color;
   }
 
+  void ComponentLight::SetEnableShadow(bool enable)
+  {
+    _enable_shadow = enable;
+  }
+
   BIND_CLS_FUNC_DEFINE(ComponentLight, SetLightColor);
+  BIND_CLS_FUNC_DEFINE(ComponentLight, SetEnableShadow);
 
   static PyMethodDef type_methods[] = {
   {"SetLightColor", BIND_CLS_FUNC_NAME(ComponentLight, SetLightColor), METH_VARARGS, 0},
+  {"SetEnableShadow", BIND_CLS_FUNC_NAME(ComponentLight, SetEnableShadow), METH_VARARGS, 0},
   {0, nullptr, 0, 0},
   };
 

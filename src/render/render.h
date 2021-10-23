@@ -169,6 +169,7 @@ namespace render {
 
   private:
     std::string _pbr_skybox_path;
+    bool _enable_ibl;
 
   private:
     // config

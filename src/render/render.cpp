@@ -32,7 +32,7 @@ namespace render {
 
   std::vector<glm::mat4> getPointLightVP(const glm::vec3& pos) {
     std::vector<glm::mat4> res;
-    auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+    auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 50.0f);
     res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
     res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
     res.push_back(projection * glm::lookAt(pos, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
@@ -44,31 +44,29 @@ namespace render {
 
   void Render::PrepareRender()
   {
-    // 1. skybox
-    InitPbrSkybox();
+    if (_enable_ibl) {
+      // 1. skybox
+      InitPbrSkybox();
 
-    // 2. irradiance
-    InitPbrIrradiance();
+      // 2. irradiance
+      InitPbrIrradiance();
 
-    // 3. prefilter
-    InitPbrPrefilter();
+      // 3. prefilter
+      InitPbrPrefilter();
 
-    // 4. brdf
-    InitPbrBrdf();
+      // 4. brdf
+      InitPbrBrdf();
+    }
   }
 
   void Render::DoRender()
   {
     auto begin_time = std::chrono::steady_clock::now();
-    if (_enable_shadow) {
-      RenderShadow();
-    }
+    RenderShadow();
     auto end_shadow = std::chrono::steady_clock::now();
     RenderGbuffer();
     auto end_gbuffer = std::chrono::steady_clock::now();
-    if (_enable_ssao) {
-      RenderSSAO();
-    }
+    RenderSSAO();
     auto end_ssao = std::chrono::steady_clock::now();
     RenderLight();
     auto end_light = std::chrono::steady_clock::now();
@@ -103,6 +101,7 @@ namespace render {
   void Render::SetPbrSkyBox(const char* path)
   {
     _pbr_skybox_path = path;
+    _enable_ibl = _pbr_skybox_path.size() > 0;
   }
 
   void Render::SetCameraTrans(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& pos)
@@ -187,14 +186,18 @@ namespace render {
     _windows_height = 1080;
     _max_direction_light_shadow = 3;
     _max_point_light_shadow = 3;
-    _shadow_map_width = 2048;
-    _shadow_map_height = 2048;
+    _shadow_map_width = 1024;
+    _shadow_map_height = 1024;
 
     _enable_shadow = true;
     _enable_ssao = true;
+    _enable_ibl = false;
   }
   void Render::RenderShadow()
   {
+    if (!_enable_shadow) {
+      return;
+    }
     glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
 
@@ -213,7 +216,7 @@ namespace render {
         glClear(GL_DEPTH_BUFFER_BIT);
 
         _shadow_shader_point->SetFV3("lightPos", glm::value_ptr(light.second.position));
-        _shadow_shader_point->SetFloat("far_plane", 100.0f);
+        _shadow_shader_point->SetFloat("far_plane", 50.0f);
         auto vps = getPointLightVP(light.second.position);
         light.second.vps = vps;
         light.second.shadow_map_idx = _point_shadow_count;
@@ -278,6 +281,7 @@ namespace render {
     glViewport(0, 0, _windows_width, _windows_height);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_CULL_FACE);
 
     for (auto& obj : _render_objects) {
       _gbuffer->SetFM4("model", glm::value_ptr(obj.second.transform));
@@ -304,10 +308,14 @@ namespace render {
       mesh->Draw(_gbuffer);
     }
 
+    glDisable(GL_CULL_FACE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
   void Render::RenderSSAO()
   {
+    if (!_enable_ssao) {
+      return;
+    }
     _ssao->Use();
     glBindFramebuffer(GL_FRAMEBUFFER, _ssao_frame_buffer);
     glViewport(0, 0, _windows_width, _windows_height);
@@ -350,6 +358,7 @@ namespace render {
 
     _light->SetInt("enable_ssao", _enable_ssao ? 1 : 0);
     _light->SetInt("enable_shadow", _enable_shadow ? 1 : 0);
+    _light->SetInt("enable_ibl", _enable_ibl ? 1 : 0);
 
     // shadow
     int point_shadow_delta_base = 10;
@@ -368,10 +377,12 @@ namespace render {
     int shadow_idx = 0;
     for (const auto& p_light : _point_light) {
       std::string base_name = "point_light_list[" + std::to_string(idx) + "]";
+      bool enable_shadow = _enable_shadow && p_light.second.enable_shadow;
+
       _light->SetFV3((base_name + ".position").c_str(), glm::value_ptr(p_light.second.position));
       _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(p_light.second.color));
-      _light->SetInt((base_name + ".enable_shadow").c_str(), p_light.second.enable_shadow ? 1 : 0);
-      if (p_light.second.enable_shadow) {
+      _light->SetInt((base_name + ".enable_shadow").c_str(), enable_shadow ? 1 : 0);
+      if (enable_shadow) {
         glActiveTexture(GL_TEXTURE0 + point_shadow_delta_base + shadow_idx);
         glBindTexture(GL_TEXTURE_CUBE_MAP, _point_shadow_map[p_light.second.shadow_map_idx]);
         _light->SetInt((base_name + ".shadow_map").c_str(), point_shadow_delta_base + shadow_idx);
@@ -385,11 +396,13 @@ namespace render {
     shadow_idx = 0;
     for (const auto& d_light : _direction_light) {
       std::string base_name = "direction_light_list[" + std::to_string(idx) + "]";
+      bool enable_shadow = _enable_shadow && d_light.second.enable_shadow;
+
       _light->SetFV3((base_name + ".direction").c_str(), glm::value_ptr(d_light.second.direction));
       _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(d_light.second.color));
       _light->SetFM4((base_name + ".shadow_vp").c_str(), glm::value_ptr(d_light.second.vp));
-      _light->SetInt((base_name + ".enable_shadow").c_str(), d_light.second.enable_shadow ? 1 : 0);
-      if (d_light.second.enable_shadow) {
+      _light->SetInt((base_name + ".enable_shadow").c_str(), enable_shadow ? 1 : 0);
+      if (enable_shadow) {
         glActiveTexture(GL_TEXTURE0 + direction_shadow_delta_base + shadow_idx);
         glBindTexture(GL_TEXTURE_2D, _diretion_shadow_map[d_light.second.shadow_map_idx]);
         _light->SetInt((base_name + ".shadow_map").c_str(), direction_shadow_delta_base + shadow_idx);
@@ -428,6 +441,10 @@ namespace render {
   }
   void Render::RenderSkyBox()
   {
+    if (!_enable_ibl)
+    {
+      return;
+    }
     _skybox->Use();
     _skybox->SetFM4("view", glm::value_ptr(_camera_view));
     _skybox->SetFM4("projection", glm::value_ptr(_camera_projection));

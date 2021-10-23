@@ -46,10 +46,13 @@ public:
   unsigned int GetShadowTexture() const { return _shadow_texture; }
 
   void SetLightColor(const glm::vec3& color);
+  void SetEnableShadow(bool enable);
+  bool IsShadowEnabled() { return _enable_shadow; }
 
 private:
   LightType _type;
   LightParam _light;
+  bool _enable_shadow;
 
   unsigned int _shadow_texture;
 };

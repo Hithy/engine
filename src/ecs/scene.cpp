@@ -29,7 +29,7 @@
 
 namespace ECS {
 
-Scene::Scene() : _active_camera(0) {
+Scene::Scene() : _active_camera(0), _ibl_hdr_path("") {
 }
 
 Scene::~Scene() {
@@ -184,6 +184,7 @@ BIND_CLS_FUNC_DEFINE(Scene, AddEntity)
 BIND_CLS_FUNC_DEFINE(Scene, AddSystem)
 BIND_CLS_FUNC_DEFINE(Scene, GetEntitiesById)
 BIND_CLS_FUNC_DEFINE(Scene, SetActiveCamera)
+BIND_CLS_FUNC_DEFINE(Scene, SetIBLPath)
 BIND_CLS_FUNC_DEFINE(Scene, GetEntitiesByTypeExt)
 BIND_CLS_FUNC_DEFINE(Scene, GetSystems)
 
@@ -194,10 +195,11 @@ static PyMethodDef type_methods[] = {
   {"AddSystem", BIND_CLS_FUNC_NAME(Scene, AddSystem), METH_VARARGS, 0},
   {"GetEntitiesById", BIND_CLS_FUNC_NAME(Scene, GetEntitiesById), METH_VARARGS, 0},
   {"SetActiveCamera", BIND_CLS_FUNC_NAME(Scene, SetActiveCamera), METH_VARARGS, 0},
+  {"SetIBLPath", BIND_CLS_FUNC_NAME(Scene, SetIBLPath), METH_VARARGS, 0},
   {"GetEntitiesByType", BIND_CLS_FUNC_NAME(Scene, GetEntitiesByTypeExt), METH_VARARGS, 0},
   {"GetSystems", BIND_CLS_FUNC_NAME(Scene, GetSystems), METH_NOARGS, 0},
   {0, nullptr, 0, 0},
-};
+}; 
 
 DEFINE_PYCXX_OBJECT_TYPE_BASE(Scene, "Scene", type_methods, py_init_params<>())
 } // namespace ECS

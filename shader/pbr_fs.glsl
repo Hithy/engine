@@ -42,6 +42,7 @@ uniform sampler2D gSSAO;
 // switch
 uniform int enable_ssao;
 uniform int enable_shadow;
+uniform int enable_ibl;
 
 in vec2 TexCoords;
 out vec4 FragColor;
@@ -55,7 +56,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
 
 // shadow
 float CalcDirShadow(DLight light, vec3 pos, vec3 normal);
-float CalcPointShadow(PLight light, vec3 L, float dist);
+float CalcPointShadow(PLight light, vec3 fragPos);
 
 void main() {
   vec4 pos_ao = texture(gPosAO, TexCoords);
@@ -111,7 +112,7 @@ void main() {
 
     float shadow_ratio = 0.0;
     if (enable_shadow > 0) {
-      shadow_ratio = CalcPointShadow(point_light_list[i], L, dist);
+      shadow_ratio = CalcPointShadow(point_light_list[i], WorldPos);
     }
 
     sum_color += LO * (1.0 - shadow_ratio);
@@ -152,7 +153,7 @@ void main() {
   vec3 ambient = vec3(0.0);
   vec3 specular = vec3(0.0);
 
-  {
+  if (enable_ibl > 0) {
     // IBL
     vec3 F = fresnelSchlickRoughness(max(0.0, dot(V, N)), F0, roughness);
     vec3 kS = F;
@@ -236,16 +237,37 @@ float CalcDirShadow(DLight light, vec3 pos, vec3 normal)
   return shadow_ratio;
 }
 
-float CalcPointShadow(PLight light, vec3 L, float dist)
+vec3 sampleOffsetDirections[20] = vec3[]
+(
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
+
+float CalcPointShadow(PLight light, vec3 fragPos)
 {
   float shadow_ratio = 0.0;
 
   if (light.enable_shadow > 0) {
-    float shadow_depth = texture(light.shadow_map, -L).r * 100.0f;
-    float bias = 0.05;
-    if (shadow_depth + bias < dist) {
-      shadow_ratio = 1.0;
+    vec3 fragToLight = fragPos - light.position;
+    float currentDepth = length(fragToLight);
+
+    float bias    = 0.15; 
+    int samples = 20;
+
+    float viewDistance = length(cam_pos - fragPos);
+    float diskRadius = (1.0 + (viewDistance / 50.0f)) / 25.0;
+
+    for(int i = 0; i < samples; ++i)
+    {
+        float closestDepth = texture(light.shadow_map, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+        closestDepth *= 50.0f;   // undo mapping [0;1]
+        if(currentDepth - bias > closestDepth)
+            shadow_ratio += 1.0;
     }
+    shadow_ratio /= float(samples);
   }
 
   return shadow_ratio;

@@ -36,6 +36,9 @@ public:
   void SetActiveCamera(uint64_t ent_id) { _active_camera = ent_id; }
   uint64_t GetActiveCamera() { return _active_camera; }
 
+  const std::string& GetIBLHdrPath() { return _ibl_hdr_path; }
+  void SetIBLPath(const char* hdr_path) { _ibl_hdr_path = hdr_path; }
+
 private:
   // id -> entity
   std::unordered_map<uint64_t, IEntity *> _entities;
@@ -44,6 +47,6 @@ private:
   std::unordered_map<SystemType, System *> _systems;
 
   uint64_t _active_camera;
-  
+  std::string _ibl_hdr_path;
 };
 } // namespace ECS

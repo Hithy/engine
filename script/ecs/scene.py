@@ -2,9 +2,10 @@ import _engine
 # import numpy
 from ecs import rotate_system
 
-def createDirectionLight(color, direction):
+def createDirectionLight(color, direction, enable_shadow=False):
 	comp_light = _engine.ComponentLight(1)
 	comp_light.SetLightColor(color)
+	comp_light.SetEnableShadow(enable_shadow)
 
 	comp_trans = _engine.CreateComponentTransform()
 	comp_trans.SetForward(direction)
@@ -15,9 +16,10 @@ def createDirectionLight(color, direction):
 
 	return ent
 
-def createPointLight(color, pos):
+def createPointLight(color, pos, enable_shadow=False):
 	comp_light = _engine.ComponentLight(2)
 	comp_light.SetLightColor(color)
+	comp_light.SetEnableShadow(enable_shadow)
 
 	comp_trans = _engine.CreateComponentTransform()
 	comp_trans.SetPosition(pos)
@@ -66,16 +68,10 @@ def createGun():
 
 	return ent
 
-def createBackpack():
+def createBackpack(pos):
 	comp_model = _engine.CreateComponentModel("resource/models/backpack/backpack.obj")
-	comp_model.SetAlbedoPath("resource/models/backpack/Scene_-_Root_baseColor.jpeg")
-	comp_model.SetNormalPath("resource/models/backpack/Scene_-_Root_normal.png")
-	comp_model.SetMetalicPath("resource/images/pbr/rusted_iron/metallic.png")
-	comp_model.SetRouphnessPath("resource/images/pbr/rusted_iron/roughness.png")
-	comp_model.SetAOPath("resource/images/pbr/rusted_iron/ao.png")
-
 	comp_trans = _engine.CreateComponentTransform()
-	comp_trans.SetPosition([5.0, 0.0, -15.0])
+	comp_trans.SetPosition(pos)
 	# comp_trans.SetScale([0.01, 0.01, 0.01])
 	# comp_trans.SetRotationEular([1.600, 4.660, 0.1])
 
@@ -105,6 +101,8 @@ class PyScene(_engine.Scene):
 			sys.tick(dt)
 
 	def Init(self):
+		# self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
+
 		self.add_system(_engine.CreateSystemCamera())
 		self.add_system(_engine.CreateSystemModel())
 		self.add_system(_engine.CreateSystemInput())
@@ -122,6 +120,7 @@ class PyScene(_engine.Scene):
 		self.AddEntity(createBall("grass", [-1.0, 0.0, -15.0], 0.5))
 		self.AddEntity(createBall("plastic", [2.0, 0.0, -15.0], 0.5))
 		self.AddEntity(createBall("wall", [5.0, 0.0, -15.0], 0.5))
+		self.AddEntity(createBackpack([5.0, 0.0, -18.0]))
 
 		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-8.0, -2.0, -20.0]))
 		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-2.0, 2.0, -20.0]))
@@ -130,7 +129,7 @@ class PyScene(_engine.Scene):
 		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [5.0, 1.0, -13.0]))
 		# self.AddEntity(createBall("white", [5.0, 1.0, -13.0], 0.1))
 		self.AddEntity(createDirectionLight([20.0, 20.0, 20.0], [1.0, 0.0, -0.2]))
-		# self.AddEntity(createPointLight([200.0, 200.0, 200.0], [-5.0, 1.0, -18.0]))
+		self.AddEntity(createPointLight([2000.0, 2000.0, 2000.0], [-5.0, 3.0, -15.0], 1))
 
 	def add_system(self, sys):
 		super().AddSystem(sys)
