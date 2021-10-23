@@ -31,15 +31,13 @@ namespace ECS {
     auto cam_ent = dynamic_cast<Entity*>(_scene->GetEntitiesById(_scene->GetActiveCamera()));
     if (cam_ent) {
       auto& world = World::GetInstance();
-      float ratio = (1.0f * world.ctx.window_width) / world.ctx.window_height;
 
       auto cam_comp = dynamic_cast<ComponentCamera*>(
         cam_ent->GetComponent(ComponentType_Camera));
       auto trans_comp = dynamic_cast<ComponentTransform*>(
         cam_ent->GetComponent(ComponentType_Transform));
       auto view = cam_comp->GetView();
-      auto projection =
-        glm::perspective(glm::radians(cam_comp->GetFOV()), ratio, 0.1f, 1000.0f);
+      auto projection = cam_comp->GetProjection();
 
       auto& render = render::Render::GetInstance();
       render.SetCameraTrans(view, projection, trans_comp->GetPosition());

@@ -29,5 +29,17 @@ glm::mat4 ComponentCamera::GetView() {
   return rotate_mat * glm::mat4(1.0f);
 }
 
-DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentCamera, "ComponentCamera", nullptr, py_init_params<>())
+glm::mat4 ComponentCamera::GetProjection()
+{
+    return glm::perspective(glm::radians(_fov), _ratio, 0.1f, 1000.0f);
+}
+
+BIND_CLS_FUNC_DEFINE(ComponentCamera, Lock);
+
+static PyMethodDef type_methods[] = {
+  {"Lock", BIND_CLS_FUNC_NAME(ComponentCamera, Lock), METH_VARARGS, 0},
+  {0, nullptr, 0, 0},
+};
+
+DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentCamera, "ComponentCamera", type_methods, py_init_params<>())
 } // namespace ECS

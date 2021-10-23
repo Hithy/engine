@@ -25,6 +25,11 @@ void SystemCamera::Tick(float dt) {
   for (auto &ent : ents) {
     auto base_ent = dynamic_cast<Entity*>(ent);
     auto comp_cam = dynamic_cast<ComponentCamera*>(base_ent->GetComponent(ComponentType_Camera));
+
+    if (comp_cam->IsLocked()) {
+      continue;
+    }
+
     auto comp_trans = dynamic_cast<ComponentTransform*>(base_ent->GetComponent(ComponentType_Transform));
 
     // update pos
@@ -32,10 +37,9 @@ void SystemCamera::Tick(float dt) {
     auto view = comp_cam->GetView();
     view = glm::inverse(view);
 
-    auto forward = view * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
-    auto right = view * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+    auto forward = glm::normalize(view * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
+    auto right = glm::normalize(view * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
     auto cam_pos = comp_trans->GetPosition();
-
     if (WPressed) {
       cam_pos += glm::vec3(forward * camera_speed);
     }

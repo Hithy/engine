@@ -22,14 +22,14 @@
 namespace ECS {
 
 static void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
-  static float lastX = xpos;
-  static float lastY = ypos;
+  static double lastX = xpos;
+  static double lastY = ypos;
 
   auto &world = World::GetInstance();
 
   if (world.IsMouseCaptured()) {
-    world.ctx.input.move_delta_x = xpos - lastX;
-    world.ctx.input.move_delta_y = ypos - lastY;
+    world.ctx.input.move_delta_x += xpos - lastX;
+    world.ctx.input.move_delta_y += ypos - lastY;
   }
 
   lastX = xpos;
@@ -97,7 +97,6 @@ void World::initGL() {
     throw "fail to glad load gl loader\n";
   }
 
-  // glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   glfwSetCursorPosCallback(_window, mouse_callback);
   glfwSetScrollCallback(_window, scroll_callback);
 
@@ -105,8 +104,8 @@ void World::initGL() {
   glDepthFunc(GL_LEQUAL);
   // glEnable(GL_CULL_FACE);
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-  glEnable(GL_DEBUG_OUTPUT);
-  glDebugMessageCallback(MessageCallback, 0);
+  // glEnable(GL_DEBUG_OUTPUT);
+  // glDebugMessageCallback(MessageCallback, 0);
 
   ImGui::CreateContext();
   ImGui_ImplGlfw_InitForOpenGL(_window, true);
@@ -176,7 +175,6 @@ void World::render() {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
   glfwSwapBuffers(_window);
-  glfwPollEvents();
 }
 
 void World::ToggleMouse()
@@ -208,11 +206,11 @@ void World::Init() {
 void World::Run() {
   uint64_t curr_frame = 0;
   while (!glfwWindowShouldClose(_window)) {
-
     logic();
 
     render();
 
+    glfwPollEvents();
     curr_frame++;
   }
 }

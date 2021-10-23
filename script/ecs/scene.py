@@ -64,6 +64,7 @@ def createBackpack(pos):
 
 def CreateCamera():
 	comp_cam = _engine.ComponentCamera()
+	# comp_cam.Lock(1)
 	comp_trans = _engine.CreateComponentTransform()
 
 	cam_ent = _engine.CreateEntity()
