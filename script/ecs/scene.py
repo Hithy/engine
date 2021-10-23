@@ -72,7 +72,7 @@ def createBackpack(pos):
 	comp_model = _engine.CreateComponentModel("resource/models/backpack/backpack.obj")
 	comp_trans = _engine.CreateComponentTransform()
 	comp_trans.SetPosition(pos)
-	# comp_trans.SetScale([0.01, 0.01, 0.01])
+	comp_trans.SetScale([0.01, 0.01, 0.01])
 	# comp_trans.SetRotationEular([1.600, 4.660, 0.1])
 
 	ent = _engine.CreateEntity()
@@ -101,7 +101,7 @@ class PyScene(_engine.Scene):
 			sys.tick(dt)
 
 	def Init(self):
-		# self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
+		self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
 
 		self.add_system(_engine.CreateSystemCamera())
 		self.add_system(_engine.CreateSystemModel())
