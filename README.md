@@ -2,11 +2,11 @@
 
 ## Dependency
 
-### MSVC(Windows)
+### MSVC on Windows
 
 network to access [github](https://www.github.com)
 
-### gcc/clang(linux or mingw)
+### gcc/clang on Linux or Mingw
 
 - glfw
 - glm
@@ -26,3 +26,7 @@ cmake --build build --config RelWithDebInfo
 # run
 cmake --build build --config RelWithDebInfo --target run
 ```
+
+## Play
+
+ref to [scene.py](script/ecs/scene.py)
