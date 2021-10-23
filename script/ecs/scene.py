@@ -49,25 +49,6 @@ def createBall(material, pos, size):
 
 	return ent
 
-def createGun():
-	comp_model = _engine.CreateComponentModel("resource/models/Cerberus_by_Andrew_Maximov/Cerberus_LP.FBX")
-	comp_model.SetAlbedoPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_A.tga")
-	comp_model.SetNormalPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_N.tga")
-	comp_model.SetMetalicPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_M.tga")
-	comp_model.SetRouphnessPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Cerberus_R.tga")
-	comp_model.SetAOPath("resource/models/Cerberus_by_Andrew_Maximov/Textures/Raw/Cerberus_AO.tga")
-
-	comp_trans = _engine.CreateComponentTransform()
-	comp_trans.SetPosition([0.0, 0.0, -15.0])
-	comp_trans.SetScale([0.1, 0.1, 0.1])
-	comp_trans.SetRotationEular([1.600, 4.660, 0.1])
-
-	ent = _engine.CreateEntity()
-	ent.AddComponent(comp_model)
-	ent.AddComponent(comp_trans)
-
-	return ent
-
 def createBackpack(pos):
 	comp_model = _engine.CreateComponentModel("resource/models/backpack/backpack.obj")
 	comp_trans = _engine.CreateComponentTransform()
@@ -101,34 +82,31 @@ class PyScene(_engine.Scene):
 			sys.tick(dt)
 
 	def Init(self):
+		# enable IBL skybox
 		self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
 
+		# systems
 		self.add_system(_engine.CreateSystemCamera())
 		self.add_system(_engine.CreateSystemModel())
 		self.add_system(_engine.CreateSystemInput())
 		self.add_system(_engine.CreateSystemSyncRender())
 		self.add_system(rotate_system.RotateSystem())
 
+		# camera
 		cam_ent = CreateCamera()
 		self.AddEntity(cam_ent)
 		self.SetActiveCamera(cam_ent.get_id())
 
-		# self.AddEntity(createGun())
-		# self.AddEntity(createBackpack())
+		# objects
 		self.AddEntity(createBall("rusted_iron", [-7.0, 0.0, -15.0], 0.5))
 		self.AddEntity(createBall("gold", [-4.0, 0.0, -15.0], 0.5))
 		self.AddEntity(createBall("grass", [-1.0, 0.0, -15.0], 0.5))
 		self.AddEntity(createBall("plastic", [2.0, 0.0, -15.0], 0.5))
 		self.AddEntity(createBall("wall", [5.0, 0.0, -15.0], 0.5))
-		self.AddEntity(createBackpack([5.0, 0.0, -18.0]))
+		self.AddEntity(createBackpack([5.0, 1.0, -18.0]))
 
-		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-8.0, -2.0, -20.0]))
-		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-2.0, 2.0, -20.0]))
-		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [8.0, -2.0, -20.0]))
-		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [2.0, 2.0, -20.0]))
-		# self.AddEntity(createPointLight([100.0, 100.0, 100.0], [5.0, 1.0, -13.0]))
-		# self.AddEntity(createBall("white", [5.0, 1.0, -13.0], 0.1))
-		self.AddEntity(createDirectionLight([20.0, 20.0, 20.0], [1.0, 0.0, -0.2]))
+		# light
+		self.AddEntity(createDirectionLight([10.0, 10.0, 10.0], [1.0, 0.0, -0.2]))
 		self.AddEntity(createPointLight([2000.0, 2000.0, 2000.0], [-5.0, 3.0, -15.0], 1))
 
 	def add_system(self, sys):
