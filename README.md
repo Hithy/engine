@@ -6,7 +6,7 @@
 
 network to access [github](https://www.github.com)
 
-### Linux
+### gcc/clang(linux or mingw)
 
 - glfw
 - glm
