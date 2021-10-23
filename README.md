@@ -1,5 +1,19 @@
 # engine
 
+## Dependency
+
+### MSVC(Windows)
+
+network to access [github](https://www.github.com)
+
+### Linux
+
+- glfw
+- glm
+- assimp
+
+## Run
+
 ``` bash
 # clone
 git clone https://github.com/Hithy/engine.git
