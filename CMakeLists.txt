@@ -3,7 +3,6 @@ project(engine)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE Debug)
 
 file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h)
 set(IMGUI_FILES
