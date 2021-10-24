@@ -6,6 +6,15 @@
 ![ball](resource/images/screenshot/pbr.png)
 ![rotate](resource/images/screenshot/rotate.gif)
 
+## Feature
+
+- Render Pipeline
+	Deferred, PBR, Shadow, SSAO on Opengl
+- Gameplay
+	ECS Framework
+- Script Binding
+	cpython with cxx binding interface
+
 ## Dependency
 
 ### MSVC on Windows
