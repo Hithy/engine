@@ -57,6 +57,9 @@ template <typename U> struct ptr_box_struct {
   static PyObject *boxing(U obj) {
     static_assert(
         std::is_same_v<type_non_ptr, std::remove_pointer_t<type_non_ptr>>);
+    if (obj == nullptr) {
+      Py_RETURN_NONE;
+    }
     return detail::boxing<type_non_ptr &>(*obj);
   }
   static U unboxing(PyObject *obj) {

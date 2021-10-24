@@ -291,7 +291,6 @@ int wrap_init_func_inner(PyObject* self, PyObject* args, PyObject* kwds, seq<S..
   if (!py_obj->obj) {
     py_obj->obj = new Cls(ParamGet<S>::get(&params)...);
     py_obj->obj->SetPyObj(py_obj);
-    // ::printf("create obj py: %p, c: %p\n", py_obj, py_obj->obj);
     return 0;
   }
 

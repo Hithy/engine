@@ -93,8 +93,8 @@ PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* kwds);
     new_type = new PyTypeObject{PyVarObject_HEAD_INIT(NULL, 0) name,           \
                                 sizeof(PyBindObject)};                         \
     new_type->tp_dealloc = pybind__dealloc__;                                  \
-    new_type->tp_init = GenPyInitFunc<cls>(init_params);                                  \
-    new_type->tp_new = pybind__new__;                                     \
+    new_type->tp_init = GenPyInitFunc<cls>(init_params);                       \
+    new_type->tp_new = pybind__new__;                                          \
     new_type->tp_methods = methods;                                            \
     new_type->tp_flags |= Py_TPFLAGS_BASETYPE;                                 \
     new_type->tp_base = base::GetPyType();                                     \

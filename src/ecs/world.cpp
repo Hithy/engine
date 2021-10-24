@@ -188,6 +188,19 @@ bool World::IsMouseCaptured()
   return _capture_mouse;
 }
 
+std::vector<double> World::GetMoveDelta()
+{
+  std::vector<double> res(2);
+  res[0] = ctx.input.move_delta_x;
+  res[1] = ctx.input.move_delta_y;
+  return res;
+}
+
+bool World::IsMousePressed(int key)
+{
+  return glfwGetMouseButton(_window, key) == GLFW_PRESS;
+}
+
 void World::AddScene(Scene* scn)
 {
   _scenes.push_back(scn);
@@ -217,10 +230,14 @@ void World::Run() {
 
 BIND_CLS_FUNC_DEFINE(World, GetActiveScene)
 BIND_CLS_FUNC_DEFINE(World, AddScene)
+BIND_CLS_FUNC_DEFINE(World, GetMoveDelta)
+BIND_CLS_FUNC_DEFINE(World, IsMousePressed)
 
 static PyMethodDef type_methods[] = {
   {"get_active_scene", BIND_CLS_FUNC_NAME(World, GetActiveScene), METH_NOARGS, 0},
   {"AddScene", BIND_CLS_FUNC_NAME(World, AddScene), METH_VARARGS, 0},
+  {"GetMoveDelta", BIND_CLS_FUNC_NAME(World, GetMoveDelta), METH_NOARGS, 0},
+  {"IsMousePressed", BIND_CLS_FUNC_NAME(World, IsMousePressed), METH_VARARGS, 0},
   {0, nullptr, 0, 0},
 };
 

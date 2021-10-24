@@ -24,10 +24,12 @@ public:
   glm::vec3 GetPosition() const;
 
   glm::quat GetRotation() const;
+  glm::vec3 GetRotationEular() const;
 
   void SetScale(glm::vec3 scale) { _scale = scale; }
   glm::vec3 GetScale() const;
 
+  void SetRotation(const glm::quat& q);
   void SetRotationEular(const glm::vec3& eular);
 
   void SetForward(const glm::vec3& forward);

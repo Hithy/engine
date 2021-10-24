@@ -34,10 +34,12 @@ glm::mat4 ComponentCamera::GetProjection()
     return glm::perspective(glm::radians(_fov), _ratio, 0.1f, 1000.0f);
 }
 
-BIND_CLS_FUNC_DEFINE(ComponentCamera, Lock);
+BIND_CLS_FUNC_DEFINE(ComponentCamera, Lock)
+BIND_CLS_FUNC_DEFINE(ComponentCamera, SetFOV)
 
 static PyMethodDef type_methods[] = {
   {"Lock", BIND_CLS_FUNC_NAME(ComponentCamera, Lock), METH_VARARGS, 0},
+  {"SetFOV", BIND_CLS_FUNC_NAME(ComponentCamera, SetFOV), METH_VARARGS, 0},
   {0, nullptr, 0, 0},
 };
 

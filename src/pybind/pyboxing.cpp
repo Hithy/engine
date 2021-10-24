@@ -1,6 +1,7 @@
 #include "pyboxing.h"
 
 #include "glm/glm.hpp"
+#include <glm/gtx/quaternion.hpp>
 #include <string>
 
 namespace detail {
@@ -48,6 +49,25 @@ namespace detail {
     res.x = detail::unboxing<float>(PyList_GetItem(obj, 0));
     res.y = detail::unboxing<float>(PyList_GetItem(obj, 1));
     res.z = detail::unboxing<float>(PyList_GetItem(obj, 2));
+    return res;
+  }
+
+  template<> PyObject* base_box_struct<glm::quat>::boxing(glm::quat obj)
+  {
+    auto res = PyList_New(4);
+    PyList_SetItem(res, 0, detail::boxing(obj.x));
+    PyList_SetItem(res, 1, detail::boxing(obj.y));
+    PyList_SetItem(res, 2, detail::boxing(obj.z));
+    PyList_SetItem(res, 3, detail::boxing(obj.w));
+    return res;
+  }
+  template<> glm::quat base_box_struct<glm::quat>::unboxing(PyObject* obj)
+  {
+    glm::quat res;
+    res.x = detail::unboxing<float>(PyList_GetItem(obj, 0));
+    res.y = detail::unboxing<float>(PyList_GetItem(obj, 1));
+    res.z = detail::unboxing<float>(PyList_GetItem(obj, 2));
+    res.w = detail::unboxing<float>(PyList_GetItem(obj, 3));
     return res;
   }
 

@@ -17,6 +17,7 @@
 #include "ecs/system_scene.h"
 
 #include "ecs/pyfunc.h"
+#include "ecs/pymath.h"
 
 #include <Python.h>
 #include <vector>
@@ -148,6 +149,9 @@ void InitPython() {
   PyModule_AddType(new_module, SystemInput::GetPyType());
 
   ECS::InitFuncModule(new_module);
+
+  auto math_module = PyImport_AddModule("_math");
+  ECS::InitMathModule(math_module);
 }
 
 void InitPythonPost() {

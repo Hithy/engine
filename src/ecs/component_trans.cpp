@@ -2,7 +2,7 @@
 
 #include "glm/gtx/quaternion.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
-#include "glm/gtx/quaternion.hpp"
+
 
 #include "pybind/pybind.h"
 
@@ -21,7 +21,17 @@ void ComponentTransform::SetPosition(glm::vec3 pos) { _translation = pos; }
 
 glm::quat ComponentTransform::GetRotation() const { return _rotation; }
 
+glm::vec3 ComponentTransform::GetRotationEular() const
+{
+  return glm::degrees(glm::eulerAngles(_rotation));
+}
+
 glm::vec3 ComponentTransform::GetScale() const { return _scale; }
+
+void ComponentTransform::SetRotation(const glm::quat& q)
+{
+  _rotation = q;
+}
 
 void ComponentTransform::SetRotationEular(const glm::vec3& eular)
 {
@@ -51,6 +61,8 @@ BIND_CLS_FUNC_DEFINE(ComponentTransform, SetPosition)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, GetPosition)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetScale)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, GetScale)
+BIND_CLS_FUNC_DEFINE(ComponentTransform, GetRotation)
+BIND_CLS_FUNC_DEFINE(ComponentTransform, SetRotation)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetRotationEular)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetForward)
 
@@ -59,6 +71,8 @@ static PyMethodDef type_methods[] = {
   {"GetPosition", BIND_CLS_FUNC_NAME(ComponentTransform, GetPosition), METH_NOARGS, 0},
   {"SetScale", BIND_CLS_FUNC_NAME(ComponentTransform, SetScale), METH_VARARGS, 0},
   {"GetScale", BIND_CLS_FUNC_NAME(ComponentTransform, GetScale), METH_NOARGS, 0},
+  {"GetRotation", BIND_CLS_FUNC_NAME(ComponentTransform, GetRotation), METH_NOARGS, 0},
+  {"SetRotation", BIND_CLS_FUNC_NAME(ComponentTransform, SetRotation), METH_VARARGS, 0},
   {"SetRotationEular", BIND_CLS_FUNC_NAME(ComponentTransform, SetRotationEular), METH_VARARGS, 0},
   {"SetForward", BIND_CLS_FUNC_NAME(ComponentTransform, SetForward), METH_VARARGS, 0},
   {0, nullptr, 0, 0},

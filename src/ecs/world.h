@@ -70,6 +70,9 @@ public:
   void ToggleMouse();
   bool IsMouseCaptured();
 
+  std::vector<double> GetMoveDelta();
+  bool IsMousePressed(int key);
+
   WorldContext ctx;
 
 private:

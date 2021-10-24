@@ -1,21 +1,19 @@
 import _engine
-import time
+import _math
+from ecs import cdef
 
 class RotateSystem(_engine.System):
 	def __init__(self):
-		super().__init__(4)
-
-		self._last_time = time.time()
+		super().__init__(cdef.SystemType_Rotate)
 
 	def tick(self, dt):
-		curr_time = time.time()
-		if curr_time - self._last_time < 1.0:
-			return
-		self._last_time = curr_time
-
+		world_obj = _engine.get_world()
 		scn = self.GetScene()
-		ents = scn.GetEntitiesByType(2)
 
-		for ent in ents:
-			comp_trans = ent.GetComponent(2)
-			print("ent pos: ", str(comp_trans.GetPosition()))
+		delta_rotate = _math.GenRotation([0.0, 1.0, 0.0], dt * 100.0);
+
+		for ent in scn.GetEntitiesByType(cdef.ComponentType_Model):
+			comp_trans = ent.GetComponent(cdef.ComponentType_Transform)
+			old_rotate = comp_trans.GetRotation()
+			new_rotate = _math.Rotate(old_rotate, delta_rotate)
+			comp_trans.SetRotation(new_rotate)
