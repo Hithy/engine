@@ -10,7 +10,7 @@ class RotateSystem(_engine.System):
 		world_obj = _engine.get_world()
 		scn = self.GetScene()
 
-		delta_rotate = _math.GenRotation([0.0, 1.0, 0.0], dt * 100.0);
+		delta_rotate = _math.GenRotation([0.0, 1.0, 0.0], dt * 50.0);
 
 		for ent in scn.GetEntitiesByType(cdef.ComponentType_Model):
 			comp_trans = ent.GetComponent(cdef.ComponentType_Transform)

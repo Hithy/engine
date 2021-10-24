@@ -1,5 +1,11 @@
 # engine
 
+## Screenshot
+
+![gun](resource/images/screenshot/gun.png)
+![ball](resource/images/screenshot/pbr.png)
+![rotate](resource/images/screenshot/rotate.png)
+
 ## Dependency
 
 ### MSVC on Windows
@@ -30,3 +36,4 @@ cmake --build build --config RelWithDebInfo --target run
 ## Play
 
 ref to [scene.py](script/ecs/scene.py)
+
