@@ -3,6 +3,7 @@ project(engine)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h)
 set(IMGUI_FILES
@@ -65,10 +66,12 @@ target_include_directories(engine PUBLIC "3rd/physx/pxshared/include")
 target_link_directories(engine PUBLIC "3rd/lib/compile")
 
 if (UNIX)
-  target_link_libraries(engine dl pthread util)
-endif(UNIX)
+  target_link_libraries(engine physx dl pthread util)
+elseif(WIN32)
+  target_link_libraries(engine physx_64 PhysXFoundation_64 PhysXCooking_64 PhysXPvdSDK_static_64 PhysXExtensions_static_64)
+endif()
 
-target_link_libraries(engine glfw assimp python3 physx_64 PhysXFoundation_64 PhysXCooking_64 PhysXPvdSDK_static_64 PhysXExtensions_static_64)
+target_link_libraries(engine glfw assimp python3)
 
 add_custom_target(run
   COMMAND engine
