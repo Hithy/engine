@@ -4,7 +4,7 @@
 
 - Render Pipeline
 
-	Deferred, PBR, Shadow, SSAO
+	deferred, PBR, shadow, SSAO
 
 - Gameplay
 
@@ -13,6 +13,10 @@
 - Script Binding
 
 	cpython with cxx binding interface
+
+- Physics
+
+	powered by NVIDIA Physx
 
 ## Screenshot
 
