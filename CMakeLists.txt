@@ -5,6 +5,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
+if(UNIX)
+set(CMAKE_EXE_LINKER_FLAGS "-Xlinker -export-dynamic")
+endif()
+
 file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h)
 set(IMGUI_FILES
   "3rd/imgui/imgui.cpp"
