@@ -19,6 +19,7 @@
 ![gun](resource/images/screenshot/gun.png)
 ![ball](resource/images/screenshot/pbr.png)
 ![rotate](resource/images/screenshot/rotate.gif)
+![table](resource/images/screenshot/table.gif)
 
 ## Dependency
 
