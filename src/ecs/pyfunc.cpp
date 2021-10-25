@@ -10,6 +10,7 @@
 #include "system_model.h"
 #include "system_input.h"
 #include "system_syncrender.h"
+#include "system_physics.h"
 
 #include "pybind/pybind.h"
 
@@ -84,6 +85,13 @@ namespace ECS {
     return res;
   }
 
+  SystemPhysics* CreateSystemPhysics()
+  {
+    auto res = new SystemPhysics();
+    res->SetRef(0);
+    return res;
+  }
+
   BIND_FUNC_DEFINE(CreateScene);
   BIND_FUNC_DEFINE(CreateEntity);
   BIND_FUNC_DEFINE(CreateComponentModel);
@@ -94,6 +102,7 @@ namespace ECS {
   BIND_FUNC_DEFINE(CreateSystemModel);
   BIND_FUNC_DEFINE(CreateSystemInput);
   BIND_FUNC_DEFINE(CreateSystemSyncRender);
+  BIND_FUNC_DEFINE(CreateSystemPhysics);
 
   static PyMethodDef my_methods[] = {
   {"CreateScene", BIND_FUNC_NAME(CreateScene), METH_NOARGS, NULL},
@@ -105,6 +114,7 @@ namespace ECS {
   {"CreateSystemModel", BIND_FUNC_NAME(CreateSystemModel), METH_NOARGS, NULL},
   {"CreateSystemInput", BIND_FUNC_NAME(CreateSystemInput), METH_NOARGS, NULL},
   {"CreateSystemSyncRender", BIND_FUNC_NAME(CreateSystemSyncRender), METH_NOARGS, NULL},
+  {"CreateSystemPhysics", BIND_FUNC_NAME(CreateSystemPhysics), METH_NOARGS, NULL},
   {nullptr, 0, 0, 0}
   };
 

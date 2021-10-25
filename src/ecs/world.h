@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+#include <PxPhysicsAPI.h>
+
 #include "scene.h"
 #include "pybind/pyobject.h"
 
@@ -67,6 +69,7 @@ public:
   void Init();
   void Run();
 
+  void ConnectPVD();
   void ToggleMouse();
   bool IsMouseCaptured();
 
@@ -88,10 +91,20 @@ private:
   void logic();
   void render();
 
+public:
+  physx::PxFoundation* GetFoundation() { return _foundation; }
+  physx::PxPhysics* GetPhysics() { return _physics; }
+  physx::PxPvd* GetPvd() { return _pvd; }
+
 private:
   std::vector<Scene *> _scenes;
 
   GLFWwindow *_window;
+
+  // physics
+  physx::PxFoundation* _foundation;
+  physx::PxPhysics* _physics;
+  physx::PxPvd* _pvd;
 
   bool _capture_mouse;
 };

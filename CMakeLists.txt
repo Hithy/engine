@@ -60,13 +60,15 @@ endif()
 target_include_directories(engine PUBLIC "src")
 target_include_directories(engine PUBLIC "3rd/include")
 target_include_directories(engine PUBLIC "3rd/imgui")
+target_include_directories(engine PUBLIC "3rd/physx/include")
+target_include_directories(engine PUBLIC "3rd/physx/pxshared/include")
 target_link_directories(engine PUBLIC "3rd/lib/compile")
 
 if (UNIX)
   target_link_libraries(engine dl pthread util)
 endif(UNIX)
 
-target_link_libraries(engine glfw assimp python3)
+target_link_libraries(engine glfw assimp python3 physx_64 PhysXFoundation_64 PhysXCooking_64 PhysXPvdSDK_static_64 PhysXExtensions_static_64)
 
 add_custom_target(run
   COMMAND engine

@@ -3,7 +3,6 @@
 #include "glm/gtx/quaternion.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
 
-
 #include "pybind/pybind.h"
 
 namespace ECS {

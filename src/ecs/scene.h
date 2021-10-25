@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <PxPhysicsAPI.h>
+
 #include "component.h"
 #include "entity_base.h"
 #include "system_scene.h"
@@ -38,6 +40,12 @@ public:
 
   const std::string& GetIBLHdrPath() { return _ibl_hdr_path; }
   void SetIBLPath(const char* hdr_path) { _ibl_hdr_path = hdr_path; }
+
+  physx::PxScene* GetPxScene() { return _px_scene; }
+
+private:
+  physx::PxScene* _px_scene;
+  physx::PxDefaultCpuDispatcher* _px_dispatcher;
 
 private:
   // id -> entity

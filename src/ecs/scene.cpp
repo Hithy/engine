@@ -30,6 +30,21 @@
 namespace ECS {
 
 Scene::Scene() : _active_camera(0), _ibl_hdr_path("") {
+  auto gPhysics = World::GetInstance().GetPhysics();
+  physx::PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
+  sceneDesc.gravity = physx::PxVec3(0.0f, -9.81f, 0.0f);
+  _px_dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+  sceneDesc.cpuDispatcher = _px_dispatcher;
+  sceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+  _px_scene = gPhysics->createScene(sceneDesc);
+
+  physx::PxPvdSceneClient* pvdClient = _px_scene->getScenePvdClient();
+  if (pvdClient)
+  {
+    pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+    pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+    pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+  }
 }
 
 Scene::~Scene() {
@@ -168,11 +183,18 @@ std::vector<Entity*> Scene::GetEntitiesByTypeExt(int type)
 
 std::vector<System*> Scene::GetSystems()
 {
+  static std::vector<SystemType> sys_priority = {
+    SystemType_Physics,
+    SystemType_Input,
+    SystemType_Camera,
+    SystemType_Model,
+    SystemType_Rotate,
+    SystemType_SyncRender,
+  };
   std::vector<System*> res;
-  for (int i = SystemType_Unknown + 1; i < SystemType_MAX; i++) {
-    auto idx = static_cast<SystemType>(i);
-    if (_systems.count(idx)) {
-      res.push_back(_systems[idx]);
+  for (auto const& sys_type : sys_priority) {
+    if (_systems.count(sys_type)) {
+      res.push_back(_systems[sys_type]);
     }
   }
   return res;

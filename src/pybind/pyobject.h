@@ -68,6 +68,8 @@ PyObject* pybind__new__(PyTypeObject* subtype, PyObject* args, PyObject* kwds);
     return GetPyType(); \
   }
 
+#define COMMA ,
+
 #define DEFINE_PYCXX_OBJECT_TYPE_BASE(cls, name, methods, init_params)                      \
   PyTypeObject *cls::GetPyType() {                                             \
     static PyTypeObject *new_type = nullptr;                                   \

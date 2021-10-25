@@ -9,6 +9,7 @@
 #include "ecs/component_trans.h"
 #include "ecs/component_base.h"
 #include "ecs/component_light.h"
+#include "ecs/component_physics.h"
 
 #include "ecs/system_camera.h"
 #include "ecs/system_input.h"
@@ -142,6 +143,7 @@ void InitPython() {
   PyModule_AddType(new_module, ComponentTransform::GetPyType());
   PyModule_AddType(new_module, ComponentCamera::GetPyType());
   PyModule_AddType(new_module, ComponentLight::GetPyType());
+  PyModule_AddType(new_module, ComponentPhysics::GetPyType());
 
   PyModule_AddType(new_module, SystemCamera::GetPyType());
   PyModule_AddType(new_module, SystemModel::GetPyType());

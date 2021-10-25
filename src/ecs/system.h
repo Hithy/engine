@@ -8,8 +8,8 @@ enum SystemType {
   SystemType_Camera,
   SystemType_Model,
   SystemType_Rotate,
-
   SystemType_SyncRender,
+  SystemType_Physics,
   SystemType_MAX,
 };
 

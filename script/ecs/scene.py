@@ -39,6 +39,8 @@ def createBall(material, pos, size):
 	comp_model.SetRouphnessPath("resource/images/pbr/" + material + "/roughness.png")
 	comp_model.SetAOPath("resource/images/pbr/" + material + "/ao.png")
 
+	comp_physics = _engine.ComponentPhysics(False, 0, [size * 2.0] * 3)
+
 	comp_trans = _engine.CreateComponentTransform()
 	comp_trans.SetPosition(pos)
 	comp_trans.SetScale([size, size, size])
@@ -47,12 +49,33 @@ def createBall(material, pos, size):
 	ent = _engine.CreateEntity()
 	ent.AddComponent(comp_model)
 	ent.AddComponent(comp_trans)
+	ent.AddComponent(comp_physics)
+
+	return ent
+
+def createBox(material, pos, scale):
+	comp_model = _engine.CreateComponentModel("resource/models/box/box.obj")
+	if material:
+		comp_model.SetAlbedoPath(material)
+
+	comp_physics = _engine.ComponentPhysics(False, 3, [x / 2.0 for x in scale])
+	comp_physics.SetKinematic(True)
+
+	comp_trans = _engine.CreateComponentTransform()
+	comp_trans.SetPosition(pos)
+	comp_trans.SetScale(scale)
+	# comp_trans.SetRotationEular([1.600, 4.660, 0.1])
+
+	ent = _engine.CreateEntity()
+	ent.AddComponent(comp_model)
+	ent.AddComponent(comp_trans)
+	ent.AddComponent(comp_physics)
 
 	return ent
 
 def createBackpack(pos):
 	comp_model = _engine.CreateComponentModel("resource/models/backpack/backpack.obj")
-	comp_model.SetAlbedoPath("resource/models/backpack/Scene_-_Root_baseColor.jpeg")
+	# comp_model.SetAlbedoPath("resource/models/backpack/Scene_-_Root_baseColor.jpeg")
 	comp_model.SetNormalPath("resource/models/backpack/Scene_-_Root_normal.png")
 
 	comp_trans = _engine.CreateComponentTransform()
@@ -95,6 +118,7 @@ class PyScene(_engine.Scene):
 		self.add_system(_engine.CreateSystemModel())
 		self.add_system(_engine.CreateSystemInput())
 		self.add_system(_engine.CreateSystemSyncRender())
+		self.add_system(_engine.CreateSystemPhysics())
 		self.add_system(rotate_system.RotateSystem()) # rotate entity each frame
 
 		# camera
@@ -102,17 +126,42 @@ class PyScene(_engine.Scene):
 		self.AddEntity(cam_ent)
 		self.SetActiveCamera(cam_ent.get_id())
 
+		# floor
+		self.AddEntity(createBox("", [-0.0, -5.0, -10.0], [50.0, 1.0, 50.0]))
+
+		# wall
+		self.AddEntity(createBox("", [-25.0, -3.0, -10.0], [1.0, 4.0, 50.0]))
+		self.AddEntity(createBox("", [25.0, -3.0, -10.0], [1.0, 4.0, 50.0]))
+		self.AddEntity(createBox("", [0.0, -3.0, -35.0], [50.0, 4.0, 1.0]))
+		self.AddEntity(createBox("", [0.0, -3.0, 15.0], [50.0, 4.0, 1.0]))
+
 		# objects
 		self.AddEntity(createBall("rusted_iron", [-7.0, 0.0, -10.0], 0.5))
 		self.AddEntity(createBall("gold", [-4.0, 0.0, -10.0], 0.5))
 		self.AddEntity(createBall("grass", [-1.0, 0.0, -10.0], 0.5))
 		self.AddEntity(createBall("plastic", [2.0, 0.0, -10.0], 0.5))
 		self.AddEntity(createBall("wall", [5.0, 0.0, -10.0], 0.5))
-		self.AddEntity(createBackpack([5.0, 1.0, -13.0]))
+		# self.AddEntity(createBackpack([5.0, 1.0, -15.0]))
+
+		self.AddEntity(createBall("plastic", [-7.0, 0.0, -10.0], 0.5))
+		self.AddEntity(createBall("plastic", [-4.0, 0.0, -10.0], 0.5))
+		self.AddEntity(createBall("plastic", [-1.0, 0.0, -10.0], 0.5))
+		self.AddEntity(createBall("plastic", [2.0, 0.0, -10.0], 0.5))
+		self.AddEntity(createBall("plastic", [5.0, 0.0, -10.0], 0.5))
+		self.AddEntity(createBall("plastic", [-7.0, 0.0, -7.0], 0.5))
+		self.AddEntity(createBall("plastic", [-4.0, 0.0, -7.0], 0.5))
+		self.AddEntity(createBall("plastic", [-1.0, 0.0, -7.0], 0.5))
+		self.AddEntity(createBall("plastic", [2.0, 0.0, -7.0], 0.5))
+		self.AddEntity(createBall("plastic", [5.0, 0.0, -7.0], 0.5))
+		self.AddEntity(createBall("plastic", [-7.0, 0.0, -13.0], 0.5))
+		self.AddEntity(createBall("plastic", [-4.0, 0.0, -13.0], 0.5))
+		self.AddEntity(createBall("plastic", [-1.0, 0.0, -13.0], 0.5))
+		self.AddEntity(createBall("plastic", [2.0, 0.0, -13.0], 0.5))
+		self.AddEntity(createBall("plastic", [5.0, 0.0, -13.0], 0.5))
 
 		# light
-		self.AddEntity(createDirectionLight([10.0, 10.0, 10.0], [1.0, 0.0, -0.2]))
-		self.AddEntity(createPointLight([500.0, 500.0, 500.0], [-5.0, 3.0, -10.0], 1))
+		# self.AddEntity(createDirectionLight([10.0, 10.0, 10.0], [1.0, 0.0, -0.2]))
+		self.AddEntity(createPointLight([1000.0, 1000.0, 1000.0], [-5.0, 3.0, -10.0], 1))
 
 	def add_system(self, sys):
 		super().AddSystem(sys)

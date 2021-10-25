@@ -254,7 +254,7 @@ float CalcPointShadow(PLight light, vec3 fragPos)
     vec3 fragToLight = fragPos - light.position;
     float currentDepth = length(fragToLight);
 
-    float bias    = 0.15; 
+    float bias    = 0.005; 
     int samples = 20;
 
     float viewDistance = length(cam_pos - fragPos);

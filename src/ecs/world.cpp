@@ -1,6 +1,7 @@
 #include "world.h"
 #include <iostream>
 
+#include <PxPhysicsAPI.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -20,6 +21,9 @@
 #include "backends/imgui_impl_opengl3.h"
 
 namespace ECS {
+
+static physx::PxDefaultAllocator gAllocator;
+static physx::PxDefaultErrorCallback gErrorCallback;
 
 static void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
   static double lastX = xpos;
@@ -112,7 +116,12 @@ void World::initGL() {
   ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-void World::initPhysx() {}
+void World::initPhysx() {
+  _foundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
+  _pvd = physx::PxCreatePvd(*_foundation);
+  _physics = PxCreatePhysics(PX_PHYSICS_VERSION, *_foundation, physx::PxTolerancesScale(), true, _pvd);
+  PxInitExtensions(*_physics, _pvd);
+}
 
 void World::initRender()
 {
@@ -168,6 +177,10 @@ void World::render() {
   if (ImGui::Button("Control Camera")) {
     ToggleMouse();
   }
+  if (ImGui::Button("Connet PVD")) {
+    ConnectPVD();
+  }
+
   render::Render::GetInstance().DoRender();
 
   ImGui::End();
@@ -175,6 +188,12 @@ void World::render() {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
   glfwSwapBuffers(_window);
+}
+
+void World::ConnectPVD()
+{
+  physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+  _pvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
 }
 
 void World::ToggleMouse()
