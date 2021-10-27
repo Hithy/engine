@@ -190,7 +190,7 @@ namespace render {
     _shadow_map_height = 1024;
 
     _enable_shadow = true;
-    _enable_ssao = true;
+    _enable_ssao = false;
     _enable_ibl = false;
   }
   void Render::RenderShadow()
@@ -208,6 +208,10 @@ namespace render {
     _shadow_shader_point->Use();
     _point_shadow_count = 0;
     for (auto& light : _point_light) {
+      if (_point_shadow_count >= _max_point_light_shadow)
+      {
+        break;
+      }
       if (light.second.enable_shadow) {
         // each light
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _point_shadow_map[_point_shadow_count], 0);
@@ -244,6 +248,9 @@ namespace render {
     _shadow_shader_direction->Use();
     _diretion_shadow_count = 0;
     for (auto& light : _direction_light) {
+      if (_diretion_shadow_count >= _max_direction_light_shadow) {
+        break;
+      }
       if (light.second.enable_shadow) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _diretion_shadow_map[_diretion_shadow_count], 0);
         glDrawBuffer(GL_NONE);
@@ -251,7 +258,7 @@ namespace render {
         glClear(GL_DEPTH_BUFFER_BIT);
 
         auto view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), light.second.direction, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, -20.0f, 20.0f);
+        auto projection = glm::ortho(-40.0f, 40.0f, -40.0f, 40.0f, -20.0f, 20.0f);
         light.second.vp = projection * view;
         light.second.shadow_map_idx = _diretion_shadow_count;
         auto vp = projection * view;
@@ -364,11 +371,13 @@ namespace render {
     int point_shadow_delta_base = 10;
     int direction_shadow_delta_base = 20;
     
-    for (int i = 0; i < 10; i++) {
-      // set default value to uniform
-      std::string point_light_map = "point_light_list[" + std::to_string(i) + "].shadow_map";
-      std::string direction_light_map = "direction_light_list[" + std::to_string(i) + "].shadow_map";
+    for (int i = 0; i < _max_point_light_shadow; i++) {
+      std::string point_light_map = "point_light_shadow[" + std::to_string(i) + "].shadow_map";
       _light->SetInt(point_light_map.c_str(), point_shadow_delta_base);
+    }
+
+    for (int i = 0; i < _max_direction_light_shadow; i++) {
+      std::string direction_light_map = "direction_light_shadow[" + std::to_string(i) + "].shadow_map";
       _light->SetInt(direction_light_map.c_str(), direction_shadow_delta_base);
     }
 
@@ -377,15 +386,17 @@ namespace render {
     int shadow_idx = 0;
     for (const auto& p_light : _point_light) {
       std::string base_name = "point_light_list[" + std::to_string(idx) + "]";
-      bool enable_shadow = _enable_shadow && p_light.second.enable_shadow;
+      bool enable_shadow = _enable_shadow && p_light.second.enable_shadow && shadow_idx < _max_point_light_shadow;
 
       _light->SetFV3((base_name + ".position").c_str(), glm::value_ptr(p_light.second.position));
       _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(p_light.second.color));
-      _light->SetInt((base_name + ".enable_shadow").c_str(), enable_shadow ? 1 : 0);
+      _light->SetInt((base_name + ".shadow_idx").c_str(), enable_shadow ? shadow_idx : -1);
+      _light->SetFloat((base_name + ".radius").c_str(), 3.0f);
       if (enable_shadow) {
         glActiveTexture(GL_TEXTURE0 + point_shadow_delta_base + shadow_idx);
         glBindTexture(GL_TEXTURE_CUBE_MAP, _point_shadow_map[p_light.second.shadow_map_idx]);
-        _light->SetInt((base_name + ".shadow_map").c_str(), point_shadow_delta_base + shadow_idx);
+        std::string shadow_name = "point_light_shadow[" + std::to_string(shadow_idx) + "]";
+        _light->SetInt((shadow_name + ".shadow_map").c_str(), point_shadow_delta_base + shadow_idx);
         shadow_idx++;
       }
       idx++;
@@ -396,16 +407,17 @@ namespace render {
     shadow_idx = 0;
     for (const auto& d_light : _direction_light) {
       std::string base_name = "direction_light_list[" + std::to_string(idx) + "]";
-      bool enable_shadow = _enable_shadow && d_light.second.enable_shadow;
+      bool enable_shadow = _enable_shadow && d_light.second.enable_shadow && shadow_idx < _max_direction_light_shadow;
 
       _light->SetFV3((base_name + ".direction").c_str(), glm::value_ptr(d_light.second.direction));
       _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(d_light.second.color));
-      _light->SetFM4((base_name + ".shadow_vp").c_str(), glm::value_ptr(d_light.second.vp));
-      _light->SetInt((base_name + ".enable_shadow").c_str(), enable_shadow ? 1 : 0);
+      _light->SetInt((base_name + ".shadow_idx").c_str(), enable_shadow ? shadow_idx : -1);
       if (enable_shadow) {
         glActiveTexture(GL_TEXTURE0 + direction_shadow_delta_base + shadow_idx);
         glBindTexture(GL_TEXTURE_2D, _diretion_shadow_map[d_light.second.shadow_map_idx]);
-        _light->SetInt((base_name + ".shadow_map").c_str(), direction_shadow_delta_base + shadow_idx);
+        std::string shadow_name = "direction_light_shadow[" + std::to_string(shadow_idx) + "]";
+        _light->SetInt((shadow_name + ".shadow_map").c_str(), direction_shadow_delta_base + shadow_idx);
+        _light->SetFM4((shadow_name + ".shadow_vp").c_str(), glm::value_ptr(d_light.second.vp));
         shadow_idx++;
       }
       idx++;

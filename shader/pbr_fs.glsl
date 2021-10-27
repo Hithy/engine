@@ -5,25 +5,35 @@ const float PI = 3.14159265359;
 struct PLight {
   vec3 position;
   vec3 diffuse;
-  int enable_shadow;
+  float radius;
+  int shadow_idx;
+};
+
+struct PLightShadow {
   samplerCube shadow_map;
 };
 
 struct DLight {
   vec3 direction;
   vec3 diffuse;
+  int shadow_idx;
+};
+
+struct DLightShadow {
   mat4 shadow_vp;
-  int enable_shadow;
   sampler2D shadow_map;
 };
 
-#define POINT_LIGHT_MAX_COUNT 10
+#define POINT_LIGHT_MAX_COUNT 1000
 uniform int point_light_count;
 uniform PLight point_light_list[POINT_LIGHT_MAX_COUNT];
 
-#define DIRECTION_LIGHT_MAX_COUNT 10
+#define DIRECTION_LIGHT_MAX_COUNT 1000
 uniform int direction_light_count;
 uniform DLight direction_light_list[DIRECTION_LIGHT_MAX_COUNT];
+
+uniform PLightShadow point_light_shadow[3];
+uniform DLightShadow direction_light_shadow[3];
 
 // viewer
 uniform vec3 cam_pos;
@@ -215,19 +225,19 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
 float CalcDirShadow(DLight light, vec3 pos, vec3 normal)
 {
   float shadow_ratio = 0.0f;
-  if (light.enable_shadow > 0) {
-    vec4 shadow_tex = light.shadow_vp * vec4(pos, 1.0f);
+  if (light.shadow_idx >= 0) {
+    vec4 shadow_tex = direction_light_shadow[light.shadow_idx].shadow_vp * vec4(pos, 1.0f);
     vec3 projCoords = shadow_tex.xyz / shadow_tex.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    vec2 texelSize = 1.0 / textureSize(light.shadow_map, 0);
+    vec2 texelSize = 1.0 / textureSize(direction_light_shadow[light.shadow_idx].shadow_map, 0);
     float bias = max(0.05 * (1.0 - pow(dot(normal, normalize(-light.direction)), 2.0)), 0.005);
     
     for(int x = -1; x <= 1; ++x)
     {
         for(int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture(light.shadow_map, projCoords.xy + vec2(x, y) * texelSize).r; 
+            float pcfDepth = texture(direction_light_shadow[light.shadow_idx].shadow_map, projCoords.xy + vec2(x, y) * texelSize).r; 
             shadow_ratio += projCoords.z - bias > pcfDepth ? 1.0 : 0.0;        
         }    
     }
@@ -250,7 +260,7 @@ float CalcPointShadow(PLight light, vec3 fragPos)
 {
   float shadow_ratio = 0.0;
 
-  if (light.enable_shadow > 0) {
+  if (light.shadow_idx >= 0) {
     vec3 fragToLight = fragPos - light.position;
     float currentDepth = length(fragToLight);
 
@@ -262,7 +272,7 @@ float CalcPointShadow(PLight light, vec3 fragPos)
 
     for(int i = 0; i < samples; ++i)
     {
-        float closestDepth = texture(light.shadow_map, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+        float closestDepth = texture(point_light_shadow[light.shadow_idx].shadow_map, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
         closestDepth *= 50.0f;   // undo mapping [0;1]
         if(currentDepth - bias > closestDepth)
             shadow_ratio += 1.0;
