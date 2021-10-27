@@ -91,6 +91,7 @@ namespace ECS {
         point_light.position = comp_trans->GetPosition();
         point_light.color = comp_light->GetLightParam().diffuse;
         point_light.enable_shadow = comp_light->IsShadowEnabled();
+        point_light.radius = comp_light->GetRadius();
 
         render.AddPointLight(point_light);
       } else if (comp_light->GetLightType() == LightType_Direction) {

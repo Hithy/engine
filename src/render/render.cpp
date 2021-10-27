@@ -62,6 +62,8 @@ namespace render {
   void Render::DoRender()
   {
     auto begin_time = std::chrono::steady_clock::now();
+    ComputeClusterLight();
+    auto end_cluster_box = std::chrono::steady_clock::now();
     RenderShadow();
     auto end_shadow = std::chrono::steady_clock::now();
     RenderGbuffer();
@@ -73,12 +75,14 @@ namespace render {
     RenderSkyBox();
     auto end_skybox = std::chrono::steady_clock::now();
 
-    _dt_shadow_pass = std::chrono::duration<float, std::milli>(end_shadow - begin_time).count();
+    _dt_cluster_box_pass = std::chrono::duration<float, std::milli>(end_cluster_box - begin_time).count();
+    _dt_shadow_pass = std::chrono::duration<float, std::milli>(end_shadow - end_cluster_box).count();
     _dt_gbuffer_pass = std::chrono::duration<float, std::milli>(end_gbuffer - end_shadow).count();
     _dt_ssao_pass = std::chrono::duration<float, std::milli>(end_ssao - end_gbuffer).count();
     _dt_light_pass = std::chrono::duration<float, std::milli>(end_light - end_ssao).count();
     _dt_skybox_pass = std::chrono::duration<float, std::milli>(end_skybox - end_light).count();
 
+    ImGui::Text("cluster pass: %.3f ms", _dt_cluster_box_pass);
     ImGui::Text("shadow pass: %.3f ms", _dt_shadow_pass);
     ImGui::Text("gbuffer pass: %.3f ms", _dt_gbuffer_pass);
     ImGui::Text("ssao pass: %.3f ms", _dt_ssao_pass);
@@ -96,6 +100,7 @@ namespace render {
     InitPBR();
     InitShadowMap();
     InitSSAO();
+    InitCluster();
   }
 
   void Render::SetPbrSkyBox(const char* path)
@@ -189,6 +194,14 @@ namespace render {
     _shadow_map_width = 1024;
     _shadow_map_height = 1024;
 
+    _z_near = 0.1f;
+    _z_far = 200.0f;
+    _z_slices = 20;
+    _tile_size = 64;
+
+    _tile_x = (_windows_width + _tile_size - 1) / _tile_size;
+    _tile_y = (_windows_height + _tile_size - 1) / _tile_size;
+
     _enable_shadow = true;
     _enable_ssao = false;
     _enable_ibl = false;
@@ -207,6 +220,7 @@ namespace render {
     // point_light
     _shadow_shader_point->Use();
     _point_shadow_count = 0;
+    int cluster_index = 0;
     for (auto& light : _point_light) {
       if (_point_shadow_count >= _max_point_light_shadow)
       {
@@ -221,6 +235,7 @@ namespace render {
 
         _shadow_shader_point->SetFV3("lightPos", glm::value_ptr(light.second.position));
         _shadow_shader_point->SetFloat("far_plane", 50.0f);
+        _shadow_shader_point->SetFloat("radius", light.second.radius);
         auto vps = getPointLightVP(light.second.position);
         light.second.vps = vps;
         light.second.shadow_map_idx = _point_shadow_count;
@@ -236,9 +251,10 @@ namespace render {
           auto mesh = GetModelResource(obj.second.mesh);
           mesh->Draw(_shadow_shader_point);
         }
-
+        _cluster_point_lights[cluster_index].shadow_idx = _point_shadow_count;
         _point_shadow_count++;
       }
+      cluster_index++;
     }
 
     glCullFace(GL_BACK);
@@ -362,6 +378,7 @@ namespace render {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     _light->SetFV3("cam_pos", glm::value_ptr(_camera_pos));
+    _light->SetFM4("cam_view", glm::value_ptr(_camera_view));
 
     _light->SetInt("enable_ssao", _enable_ssao ? 1 : 0);
     _light->SetInt("enable_shadow", _enable_shadow ? 1 : 0);
@@ -385,13 +402,7 @@ namespace render {
     int idx = 0;
     int shadow_idx = 0;
     for (const auto& p_light : _point_light) {
-      std::string base_name = "point_light_list[" + std::to_string(idx) + "]";
       bool enable_shadow = _enable_shadow && p_light.second.enable_shadow && shadow_idx < _max_point_light_shadow;
-
-      _light->SetFV3((base_name + ".position").c_str(), glm::value_ptr(p_light.second.position));
-      _light->SetFV3((base_name + ".diffuse").c_str(), glm::value_ptr(p_light.second.color));
-      _light->SetInt((base_name + ".shadow_idx").c_str(), enable_shadow ? shadow_idx : -1);
-      _light->SetFloat((base_name + ".radius").c_str(), 3.0f);
       if (enable_shadow) {
         glActiveTexture(GL_TEXTURE0 + point_shadow_delta_base + shadow_idx);
         glBindTexture(GL_TEXTURE_CUBE_MAP, _point_shadow_map[p_light.second.shadow_map_idx]);
@@ -399,8 +410,22 @@ namespace render {
         _light->SetInt((shadow_name + ".shadow_map").c_str(), point_shadow_delta_base + shadow_idx);
         shadow_idx++;
       }
-      idx++;
     }
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _point_light_ssbo);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, _cluster_point_lights.size() * sizeof(PLight), _cluster_point_lights.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, _light_grid_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, _point_light_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, _point_light_idx_ssbo);
+    _light->SetUInt("screen_width", _windows_width);
+    _light->SetUInt("screen_height", _windows_height);
+    _light->SetUInt("tile_size", _tile_size);
+    _light->SetFloat("z_near", _z_near);
+    _light->SetFloat("z_far", _z_far);
+    _light->SetUInt("z_slices", _z_slices);
+    _light->SetUInt("tile_x", _tile_x);
+    _light->SetUInt("tile_y", _tile_y);
 
     _light->SetInt("direction_light_count", _direction_light.size());
     idx = 0;
@@ -472,6 +497,56 @@ namespace render {
     skybox_texture->BindToTexture(0);
 
     renderBox();
+  }
+  void Render::ComputeClusterBox()
+  {
+    _cluster_init->Use();
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _cluster_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, _cluster_ssbo);
+
+    _cluster_init->SetUInt("screen_width", _windows_width);
+    _cluster_init->SetUInt("screen_height", _windows_height);
+
+    _cluster_init->SetFloat("z_near", _z_near);
+    _cluster_init->SetFloat("z_far", _z_far);
+    _cluster_init->SetUInt("tile_size", _tile_size);
+    _cluster_init->SetFM4("inverse_projection", glm::value_ptr(glm::inverse(
+      glm::perspective(glm::radians(60.0f), float(_windows_width)/ _windows_height, _z_near, _z_far))));
+
+    _cluster_init->Compute(_tile_x, _tile_y, _z_slices);
+  }
+  void Render::ComputeClusterLight()
+  {
+    _cluster_point_lights.resize(_point_light.size());
+    int idx = 0;
+    for (auto const& light : _point_light) {
+      _cluster_point_lights[idx].diffuse = light.second.color;
+      _cluster_point_lights[idx].position = light.second.position;
+      _cluster_point_lights[idx].radius = light.second.radius;
+      _cluster_point_lights[idx].shadow_idx = -1;
+      idx++;
+    }
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _point_light_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, _cluster_point_lights.size() * sizeof(PLight), _cluster_point_lights.data(), GL_DYNAMIC_COPY);
+
+    unsigned int init_index = 0;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _global_index_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), &init_index, GL_DYNAMIC_COPY);
+
+    _cluster_light->Use();
+    _cluster_light->SetFM4("view", glm::value_ptr(_camera_view));
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, _cluster_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, _light_grid_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, _point_light_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, _point_light_idx_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, _global_index_ssbo);
+
+    unsigned int sum_cluster = _tile_x * _tile_y * _z_slices;
+    _cluster_light->Compute(1, (sum_cluster + 255) / 256, 4);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   }
   void Render::InitPbrRenderBuffer()
   {
@@ -623,6 +698,29 @@ namespace render {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
+  void Render::InitCluster()
+  {
+    glGenBuffers(1, &_cluster_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _cluster_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, _z_slices * _tile_x * _tile_y * sizeof(AABBBox), nullptr, GL_DYNAMIC_COPY);
+
+    ComputeClusterBox();
+
+    glGenBuffers(1, &_light_grid_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _light_grid_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, _z_slices * _tile_x * _tile_y * sizeof(LightGrid), nullptr, GL_DYNAMIC_COPY);
+
+    glGenBuffers(1, &_global_index_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _global_index_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), nullptr, GL_DYNAMIC_COPY);
+
+    glGenBuffers(1, &_point_light_idx_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _point_light_idx_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 1000000 * sizeof(unsigned int), nullptr, GL_DYNAMIC_COPY);
+
+    glGenBuffers(1, &_point_light_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+  }
   void Render::InitShader()
   {
     delete _pbr_hdr_preprocess;
@@ -634,6 +732,8 @@ namespace render {
     delete _skybox;
     delete _shadow_shader_point;
     delete _shadow_shader_direction;
+    delete _cluster_init;
+    delete _cluster_light;
 
     _pbr_hdr_preprocess = new Shader("shader/cube_sampler_vs.glsl", "shader/pbr_hdr_preprocess_fs.glsl");
     _pbr_irradiance = new Shader("shader/cube_sampler_vs.glsl", "shader/pbr_irradiance_fs.glsl");
@@ -645,6 +745,8 @@ namespace render {
     _shadow_shader_point = new Shader("shader/shadow_point_vs.glsl", "shader/shadow_point_gs.glsl", "shader/shadow_point_fg.glsl");
     _shadow_shader_direction = new Shader("shader/shadow_vs.glsl", "shader/shadow_fg.glsl");
     _ssao = new Shader("shader/quad_sampler_vs.glsl", "shader/ssao_fs.glsl");
+    _cluster_init = new Shader("shader/cluster_init_cs.glsl");
+    _cluster_light = new Shader("shader/cluster_light_cs.glsl");
   }
   void Render::InitObjects()
   {

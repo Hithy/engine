@@ -30,6 +30,36 @@ namespace render {
     return res;
   }
 
+  Shader::Shader(const char* compute_path)
+  {
+    char infoLog[512];
+    int success;
+
+    auto src_str = get_file_content(compute_path);
+
+    const auto* src = src_str.c_str();
+
+    unsigned int compute_shader;
+
+    compute_shader = glCreateShader(GL_COMPUTE_SHADER);
+
+    glShaderSource(compute_shader, 1, &src, NULL);
+
+    glCompileShader(compute_shader);
+    glGetShaderiv(compute_shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+      glGetShaderInfoLog(compute_shader, 512, NULL, infoLog);
+      std::cout << "ERROR::SHADER::COMPUTE::COMPILATION_FAILED\n" << infoLog << std::endl;
+    };
+
+    id = glCreateProgram();
+    glAttachShader(id, compute_shader);
+    glLinkProgram(id);
+
+    glDeleteShader(compute_shader);
+  }
+
   Shader::Shader(const char* vert_path, const char* frag_path)
   {
     char infoLog[512];
@@ -126,6 +156,12 @@ namespace render {
     glUniform1i(param_pos, value);
   }
 
+  void Shader::SetUInt(const char* name, unsigned int value)
+  {
+    int param_pos = glGetUniformLocation(id, name);
+    glUniform1ui(param_pos, value);
+  }
+
   void Shader::SetFM4(const char* name, const float* ptr)
   {
     int param_pos = glGetUniformLocation(id, name);
@@ -154,6 +190,12 @@ namespace render {
   {
     int param_pos = glGetUniformLocation(id, name);
     glUniform4f(param_pos, x, y, z, w);
+  }
+
+  void Shader::Compute(unsigned int x, unsigned int y, unsigned int z)
+  {
+    glDispatchCompute(x, y, z);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
   }
 
   void Shader::Validate()

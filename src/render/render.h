@@ -16,6 +16,23 @@ namespace render {
   class Shader;
   class Model;
 
+  struct AABBBox {
+    glm::vec4 minPoint;
+    glm::vec4 maxPoint;
+  };
+
+  struct PLight {
+    glm::vec3 position;
+    int shadow_idx;
+    glm::vec3 diffuse;
+    float radius;
+  };
+
+  struct LightGrid {
+    unsigned int offset;
+    unsigned int count;
+  };
+
   struct RenderItem {
     uint64_t obj_id;
     glm::mat4 transform;
@@ -33,6 +50,7 @@ namespace render {
     glm::vec3 position;
     glm::vec3 color;
     bool enable_shadow;
+    float radius;
 
     // inner
     std::vector<glm::mat4> vps;
@@ -91,6 +109,9 @@ namespace render {
     void RenderLight();
     void RenderSkyBox();
 
+    void ComputeClusterBox();
+    void ComputeClusterLight();
+
     // init
     void InitPbrRenderBuffer();
     void InitPbrSkybox();
@@ -98,6 +119,7 @@ namespace render {
     void InitPbrPrefilter();
     void InitPbrBrdf();
 
+    void InitCluster();
     void InitShader();
     void InitObjects();
     void InitPBR();
@@ -120,6 +142,9 @@ namespace render {
     Shader* _skybox;
     Shader* _shadow_shader_point;
     Shader* _shadow_shader_direction;
+
+    Shader* _cluster_init;
+    Shader* _cluster_light;
 
     // pbr init texture
     uint64_t _pbr_texture_skybox;
@@ -154,6 +179,14 @@ namespace render {
     glm::mat4 _camera_view;
     glm::mat4 _camera_projection;
     glm::vec3 _camera_pos;
+
+    // cluster
+    unsigned int _cluster_ssbo;
+    unsigned int _light_grid_ssbo;
+    unsigned int _point_light_ssbo;
+    unsigned int _point_light_idx_ssbo;
+    unsigned int _global_index_ssbo;
+    std::vector<PLight> _cluster_point_lights;
 
     // objs to render
     std::unordered_map<uint64_t, RenderItem> _render_objects;
@@ -193,11 +226,21 @@ namespace render {
     int _max_point_light_shadow;
     int _max_direction_light_shadow;
 
+    // cluster
+    float _z_near;
+    float _z_far;
+    unsigned int _z_slices;
+    unsigned int _tile_size;
+
+    unsigned int _tile_x;
+    unsigned int _tile_y;
+
   private:
     bool _enable_shadow;
     bool _enable_ssao;
 
   private:
+    float _dt_cluster_box_pass;
     float _dt_shadow_pass;
     float _dt_gbuffer_pass;
     float _dt_ssao_pass;

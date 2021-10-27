@@ -4,9 +4,27 @@ const float PI = 3.14159265359;
 
 struct PLight {
   vec3 position;
+  int shadow_idx;
   vec3 diffuse;
   float radius;
-  int shadow_idx;
+};
+
+struct LightGrid {
+  uint offset;
+  uint count;
+};
+
+layout(std430, binding = 2) buffer LightGridList
+{
+  LightGrid light_grids[];
+};
+
+layout(std430, binding = 3) buffer PointLightList {
+  PLight point_lights[];
+};
+
+layout(std430, binding = 4) buffer LightIndexList {
+  uint point_light_index[];
 };
 
 struct PLightShadow {
@@ -37,6 +55,7 @@ uniform DLightShadow direction_light_shadow[3];
 
 // viewer
 uniform vec3 cam_pos;
+uniform mat4 cam_view;
 
 //IBL
 uniform samplerCube irradiance_map;
@@ -54,6 +73,16 @@ uniform int enable_ssao;
 uniform int enable_shadow;
 uniform int enable_ibl;
 
+// cluster
+uniform uint screen_width;
+uniform uint screen_height;
+uniform uint tile_size;
+uniform float z_near;
+uniform float z_far;
+uniform uint z_slices;
+uniform uint tile_x;
+uniform uint tile_y;
+
 in vec2 TexCoords;
 out vec4 FragColor;
 
@@ -66,7 +95,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
 
 // shadow
 float CalcDirShadow(DLight light, vec3 pos, vec3 normal);
-float CalcPointShadow(PLight light, vec3 fragPos);
+float CalcPointShadow(PLight light, vec3 world_pos);
 
 void main() {
   vec4 pos_ao = texture(gPosAO, TexCoords);
@@ -93,14 +122,29 @@ void main() {
 
   vec3 sum_color = vec3(0.0);
 
-  // point light
-  for (int i=0; i<point_light_count; i++) {
-    vec3 L = normalize(point_light_list[i].position - WorldPos);
+  vec3 view_pos = (cam_view * vec4(WorldPos, 1.0)).xyz;
+
+  vec2 screen_pos = TexCoords * vec2(screen_width, screen_height);
+  uvec2 cluster_xy = uvec2(screen_pos / float(tile_size));
+
+  float log_far_near = log(z_far / z_near);
+  uint cluster_z = uint(log(-view_pos.z) * z_slices / log_far_near - z_slices * log(z_near) / log_far_near);
+  // cluster_z = 6;
+  uint cluster_idx = cluster_z * tile_x * tile_y + cluster_xy.y * tile_x + cluster_xy.x;
+
+  for (uint i=0; i<light_grids[cluster_idx].count; i++) {
+    vec3 light_pos = point_lights[point_light_index[light_grids[cluster_idx].offset + i]].position;
+    float light_radius = point_lights[point_light_index[light_grids[cluster_idx].offset + i]].radius;
+    vec3 light_color = point_lights[point_light_index[light_grids[cluster_idx].offset + i]].diffuse;
+
+    vec3 L = normalize(light_pos - WorldPos);
     vec3 H = normalize(L + V);
 
-    vec3 light_color = point_light_list[i].diffuse;
-    float dist = length(point_light_list[i].position - WorldPos);
-    float attenuation = 1.0 / (dist * dist);
+    float dist = length(light_pos - WorldPos);
+    if (dist > light_radius) {
+      continue;
+    }
+    float attenuation = 1.0 - (dist / light_radius) * (dist / light_radius);
     vec3 radiance = light_color * attenuation;
 
     float NDF = DistributionGGX(N, H, roughness);
@@ -122,7 +166,7 @@ void main() {
 
     float shadow_ratio = 0.0;
     if (enable_shadow > 0) {
-      shadow_ratio = CalcPointShadow(point_light_list[i], WorldPos);
+      shadow_ratio = CalcPointShadow(point_lights[point_light_index[light_grids[cluster_idx].offset + i]], WorldPos);
     }
 
     sum_color += LO * (1.0 - shadow_ratio);
@@ -256,18 +300,18 @@ vec3 sampleOffsetDirections[20] = vec3[]
    vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
 );
 
-float CalcPointShadow(PLight light, vec3 fragPos)
+float CalcPointShadow(PLight light, vec3 world_pos)
 {
   float shadow_ratio = 0.0;
 
   if (light.shadow_idx >= 0) {
-    vec3 fragToLight = fragPos - light.position;
+    vec3 fragToLight = world_pos - light.position;
     float currentDepth = length(fragToLight);
 
-    float bias    = 0.005; 
+    float bias  = 0.005; 
     int samples = 20;
 
-    float viewDistance = length(cam_pos - fragPos);
+    float viewDistance = length(cam_pos - world_pos);
     float diskRadius = (1.0 + (viewDistance / 50.0f)) / 25.0;
 
     for(int i = 0; i < samples; ++i)

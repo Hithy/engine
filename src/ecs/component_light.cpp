@@ -9,7 +9,8 @@ namespace ECS {
     _type(static_cast<LightType>(type)), 
     _light(), 
     _shadow_texture(0),
-    _enable_shadow(false)
+    _enable_shadow(false),
+    _radius(1.0f)
   {
   }
   ComponentLight::~ComponentLight()
@@ -36,13 +37,20 @@ namespace ECS {
     _enable_shadow = enable;
   }
 
+  void ComponentLight::SetRadius(float rad)
+  {
+    _radius = rad;
+  }
+
   BIND_CLS_FUNC_DEFINE(ComponentLight, SetLightColor);
   BIND_CLS_FUNC_DEFINE(ComponentLight, SetEnableShadow);
+  BIND_CLS_FUNC_DEFINE(ComponentLight, SetRadius);
 
   static PyMethodDef type_methods[] = {
-  {"SetLightColor", BIND_CLS_FUNC_NAME(ComponentLight, SetLightColor), METH_VARARGS, 0},
-  {"SetEnableShadow", BIND_CLS_FUNC_NAME(ComponentLight, SetEnableShadow), METH_VARARGS, 0},
-  {0, nullptr, 0, 0},
+    {"SetLightColor", BIND_CLS_FUNC_NAME(ComponentLight, SetLightColor), METH_VARARGS, 0},
+    {"SetEnableShadow", BIND_CLS_FUNC_NAME(ComponentLight, SetEnableShadow), METH_VARARGS, 0},
+    {"SetRadius", BIND_CLS_FUNC_NAME(ComponentLight, SetRadius), METH_VARARGS, 0},
+    {0, nullptr, 0, 0},
   };
 
   DEFINE_PYCXX_OBJECT_TYPE(Component, ComponentLight, "ComponentLight", type_methods, py_init_params<int>())

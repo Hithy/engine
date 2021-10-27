@@ -17,10 +17,11 @@ def createDirectionLight(color, direction, enable_shadow=False):
 
     return ent
 
-def createPointLight(color, pos, enable_shadow=False):
+def createPointLight(color, pos, radius, enable_shadow=False):
     comp_light = _engine.ComponentLight(cdef.LightType_Point)
     comp_light.SetLightColor(color)
     comp_light.SetEnableShadow(enable_shadow)
+    comp_light.SetRadius(radius)
 
     comp_trans = _engine.CreateComponentTransform()
     comp_trans.SetPosition(pos)
@@ -160,8 +161,9 @@ class PyScene(_engine.Scene):
         self.AddEntity(createBall("plastic", [5.0, 0.0, -13.0], 0.5))
 
         # light
-        self.AddEntity(createDirectionLight([1.0, 1.0, 1.0], [1.0, -1.0, 0.0], 1))
-        # self.AddEntity(createPointLight([1000.0, 1000.0, 1000.0], [-5.0, 3.0, -10.0], 1))
+        # self.AddEntity(createDirectionLight([1.0, 1.0, 1.0], [1.0, -1.0, 0.0], 1))
+        # self.AddEntity(createPointLight([10.0, 10.0, 10.0], [-5.0, 4.5, -10.0], 30.0, 1))
+        # self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-5.0, -2.5, -10.0], 1))
         for i in range(1000):
             self.AddEntity(
                 createPointLight(
@@ -169,6 +171,7 @@ class PyScene(_engine.Scene):
                     [random.random() * 48.0 - 24.0,
                      -2.5,
                      random.random() * 48.0 - 34.0],
+                    3.0,
                     1
                 )
             )

@@ -48,11 +48,14 @@ public:
   void SetLightColor(const glm::vec3& color);
   void SetEnableShadow(bool enable);
   bool IsShadowEnabled() { return _enable_shadow; }
+  void SetRadius(float rad);
+  float GetRadius() { return _radius; }
 
 private:
   LightType _type;
   LightParam _light;
   bool _enable_shadow;
+  float _radius;
 
   unsigned int _shadow_texture;
 };

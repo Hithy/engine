@@ -83,7 +83,7 @@ MessageCallback(GLenum source,
 
 void World::initGL() {
   glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
@@ -108,8 +108,8 @@ void World::initGL() {
   glDepthFunc(GL_LEQUAL);
   // glEnable(GL_CULL_FACE);
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-  // glEnable(GL_DEBUG_OUTPUT);
-  // glDebugMessageCallback(MessageCallback, 0);
+  glEnable(GL_DEBUG_OUTPUT);
+  glDebugMessageCallback(MessageCallback, 0);
 
   ImGui::CreateContext();
   ImGui_ImplGlfw_InitForOpenGL(_window, true);

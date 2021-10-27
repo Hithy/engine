@@ -31,7 +31,7 @@ glm::mat4 ComponentCamera::GetView() {
 
 glm::mat4 ComponentCamera::GetProjection()
 {
-    return glm::perspective(glm::radians(_fov), _ratio, 0.1f, 1000.0f);
+    return glm::perspective(glm::radians(_fov), _ratio, 0.1f, 200.0f);
 }
 
 BIND_CLS_FUNC_DEFINE(ComponentCamera, Lock)
