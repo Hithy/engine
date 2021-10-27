@@ -4,7 +4,7 @@
 
 - Render Pipeline
 
-	deferred, PBR, shadow, SSAO
+	cluster deferred lighting, PBR, shadow, SSAO, 
 
 - Gameplay
 
@@ -22,6 +22,7 @@
 
 ![gun](resource/images/screenshot/gun.png)
 ![ball](resource/images/screenshot/pbr.png)
+![cluster](resource/images/screenshot/cluster1000.png)
 ![rotate](resource/images/screenshot/rotate.gif)
 ![table](resource/images/screenshot/table.gif)
 
