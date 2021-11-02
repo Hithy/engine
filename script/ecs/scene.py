@@ -1,5 +1,6 @@
 import _engine
 import random
+from ecs import hit_object_system
 from ecs import rotate_system
 from ecs import cdef
 
@@ -54,7 +55,7 @@ def createBall(material, pos, size):
 
     return ent
 
-def createBox(material, pos, scale):
+def createBox(material, pos, scale, rotate=None):
     comp_model = _engine.CreateComponentModel("resource/models/box/box.obj")
     if material:
         comp_model.SetAlbedoPath(material)
@@ -65,12 +66,34 @@ def createBox(material, pos, scale):
     comp_trans = _engine.CreateComponentTransform()
     comp_trans.SetPosition(pos)
     comp_trans.SetScale(scale)
-    # comp_trans.SetRotationEular([1.600, 4.660, 0.1])
+    if rotate:
+        comp_trans.SetRotationEular(rotate)
 
     ent = _engine.CreateEntity()
     ent.AddComponent(comp_model)
     ent.AddComponent(comp_trans)
     ent.AddComponent(comp_physics)
+
+    return ent
+
+def createCylinder(material, pos, scale, rotate=None):
+    comp_model = _engine.CreateComponentModel("resource/models/cylinder/cylinder.obj")
+    if material:
+        comp_model.SetAlbedoPath(material)
+
+    # comp_physics = _engine.ComponentPhysics(False, 3, [x / 2.0 for x in scale])
+    # comp_physics.SetKinematic(True)
+
+    comp_trans = _engine.CreateComponentTransform()
+    comp_trans.SetPosition(pos)
+    comp_trans.SetScale(scale)
+    if rotate:
+        comp_trans.SetRotationEular(rotate)
+
+    ent = _engine.CreateEntity()
+    ent.AddComponent(comp_model)
+    ent.AddComponent(comp_trans)
+    # ent.AddComponent(comp_physics)
 
     return ent
 
@@ -110,22 +133,32 @@ class PyScene(_engine.Scene):
         for sys in self._sys_list:
             sys.tick(dt)
 
-    def Init(self):
+    def SceneTAA(self):
         # enable IBL skybox
         # self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
 
-        # systems
-        self.add_system(_engine.CreateSystemCamera())
-        self.add_system(_engine.CreateSystemModel())
-        self.add_system(_engine.CreateSystemInput())
-        self.add_system(_engine.CreateSystemSyncRender())
-        self.add_system(_engine.CreateSystemPhysics())
         self.add_system(rotate_system.RotateSystem()) # rotate entity each frame
 
-        # camera
-        cam_ent = CreateCamera()
-        self.AddEntity(cam_ent)
-        self.SetActiveCamera(cam_ent.get_id())
+        # box
+        self.AddEntity(createBox("", [-15.0, 0.0, -15.0], [2.0, 20.0, 2.0], [0, 0, 0.03]))
+        self.AddEntity(createBox("", [-10.0, 0.0, -15.0], [2.0, 20.0, 2.0], [0, 0, 0.03]))
+        self.AddEntity(createBox("", [-5.0, 0.0, -15.0], [2.0, 20.0, 2.0], [0, 0, 0.03]))
+        self.AddEntity(createBox("", [0.0, 0.0, -15.0], [2.0, 20.0, 2.0], [0, 0, 0.03]))
+        self.AddEntity(createBox("", [5.0, 0.0, -15.0], [2.0, 20.0, 2.0], [0, 0, 0.03]))
+        self.AddEntity(createBox("", [10.0, 0.0, -15.0], [2.0, 20.0, 2.0], [0, 0, 0.03]))
+        self.AddEntity(createBox("", [15.0, 0.0, -15.0], [2.0, 20.0, 2.0], [0, 0, 0.03]))
+        self.AddEntity(createBox("", [20.0, 0.0, -15.0], [2.0, 20.0, 2.0], [0, 0, 0.03]))
+
+        # light
+        self.AddEntity(createDirectionLight([1.0, 1.0, 1.0], [1.0, -1.0, -1.0], 1))
+        # self.AddEntity(createPointLight([10.0, 10.0, 10.0], [-5.0, 4.5, -10.0], 30.0, 1))
+        # self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-5.0, -2.5, -10.0], 1))
+
+    def Scene1000(self):
+        # self.add_system(hit_object_system.HitObjectSystem()) # rotate entity each frame
+
+        # enable IBL skybox
+        self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
 
         # floor
         self.AddEntity(createBox("", [-0.0, -5.0, -10.0], [50.0, 1.0, 50.0]))
@@ -160,8 +193,16 @@ class PyScene(_engine.Scene):
         self.AddEntity(createBall("plastic", [2.0, 0.0, -13.0], 0.5))
         self.AddEntity(createBall("plastic", [5.0, 0.0, -13.0], 0.5))
 
+        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-10.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-7.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-4.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-1.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [2.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [5.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [8.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+
         # light
-        # self.AddEntity(createDirectionLight([1.0, 1.0, 1.0], [1.0, -1.0, 0.0], 1))
+        self.AddEntity(createDirectionLight([1.0, 1.0, 1.0], [1.0, -1.0, 0.0], 1))
         # self.AddEntity(createPointLight([10.0, 10.0, 10.0], [-5.0, 4.5, -10.0], 30.0, 1))
         # self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-5.0, -2.5, -10.0], 1))
         for i in range(1000):
@@ -171,10 +212,31 @@ class PyScene(_engine.Scene):
                     [random.random() * 48.0 - 24.0,
                      -2.5,
                      random.random() * 48.0 - 34.0],
-                    3.0,
-                    1
+                    3.0
                 )
             )
+
+    def InitBaseSystem(self):
+        # systems
+        self.add_system(_engine.CreateSystemCamera())
+        self.add_system(_engine.CreateSystemModel())
+        self.add_system(_engine.CreateSystemInput())
+        
+        self.add_system(_engine.CreateSystemPhysics())
+
+        # camera
+        cam_ent = CreateCamera()
+        self.AddEntity(cam_ent)
+        self.SetActiveCamera(cam_ent.get_id())
+
+    def InitRenderSystem(self):
+        self.add_system(_engine.CreateSystemSyncRender())
+
+    def Init(self):
+        self.InitBaseSystem()
+        self.Scene1000()
+        # self.SceneTAA()
+        self.InitRenderSystem()
 
     def add_system(self, sys):
         super().AddSystem(sys)

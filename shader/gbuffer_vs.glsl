@@ -17,11 +17,31 @@ out mat3 TBN;
 out vec3 ViewPos;
 out mat3 TBN_View;
 
+// TAA
+uniform vec2 jitter;
+uniform mat4 last_mvp;
+out vec2 real_pos;
+out vec2 last_pos;
+
 void main () {
-  WorldPos = (model * vec4(aPos, 1.0f)).xyz;
-  ViewPos = (view * model * vec4(aPos, 1.0f)).xyz;
+  vec4 world_pos = model * vec4(aPos, 1.0f);
+  vec4 view_pos = view * world_pos;
+
+  mat4 jitter_projection = projection;
+  jitter_projection[3][0] = 2.0 * jitter.x * -view_pos.z;
+  jitter_projection[3][1] = 2.0 * jitter.y * -view_pos.z;
+
+  vec4 proj_pos_normal = projection * view_pos;
+  vec4 proj_pos_jitter = jitter_projection * view_pos;
+  vec4 last_proj_pos = last_mvp * vec4(aPos, 1.0f);
+
+  WorldPos = world_pos.xyz;
+  ViewPos = view_pos.xyz;
   TexCoords = aTex;
-  gl_Position = projection * view * vec4(WorldPos, 1.0);
+
+  gl_Position = proj_pos_jitter;
+  real_pos = (proj_pos_normal.xy / proj_pos_normal.w) * 0.5 + 0.5;
+  last_pos = (last_proj_pos.xy / last_proj_pos.w) * 0.5 + 0.5;
 
   vec3 T = normalize(aTangent);
   vec3 B = normalize(aBitangent);

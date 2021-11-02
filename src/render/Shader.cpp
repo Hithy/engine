@@ -174,6 +174,12 @@ namespace render {
     glUniform3f(param_pos, ptr[0], ptr[1], ptr[2]);
   }
 
+  void Shader::SetFV2(const char* name, const float* ptr)
+  {
+    int param_pos = glGetUniformLocation(id, name);
+    glUniform2f(param_pos, ptr[0], ptr[1]);
+  }
+
   void Shader::SetFV3(const char* name, float x, float y, float z)
   {
     int param_pos = glGetUniformLocation(id, name);

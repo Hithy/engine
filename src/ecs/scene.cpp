@@ -1,5 +1,6 @@
 #include "scene.h"
 #include <iostream>
+#include <algorithm>
 
 #include "scene.h"
 #include "world.h"
@@ -183,20 +184,17 @@ std::vector<Entity*> Scene::GetEntitiesByTypeExt(int type)
 
 std::vector<System*> Scene::GetSystems()
 {
-  static std::vector<SystemType> sys_priority = {
-    SystemType_Physics,
-    SystemType_Input,
-    SystemType_Camera,
-    SystemType_Model,
-    SystemType_Rotate,
-    SystemType_SyncRender,
+  static std::unordered_map<SystemType, int> sys_priority = {
+    {SystemType_Physics, -1},
+    {SystemType_SyncRender, 100 },
   };
   std::vector<System*> res;
-  for (auto const& sys_type : sys_priority) {
-    if (_systems.count(sys_type)) {
-      res.push_back(_systems[sys_type]);
-    }
+  for (auto& sys : _systems) {
+    res.push_back(sys.second);
   }
+  std::sort(res.begin(), res.end(), [](const System* a, const System* b) {
+    return sys_priority[a->GetSystemType()] < sys_priority[b->GetSystemType()];
+    });
   return res;
 }
 

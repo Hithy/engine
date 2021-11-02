@@ -14,6 +14,18 @@ glm::mat4 ComponentTransform::GetTransform() const {
   return trans_mat * rotate_mat * scale_mat;
 }
 
+void ComponentTransform::UpdateLastTrans() {
+  _first_get_last_trans = false;
+  _last_trans = GetTransform();
+}
+
+glm::mat4 ComponentTransform::GetLastTrans() {
+  if (_first_get_last_trans) {
+    return GetTransform();
+  }
+  return _last_trans;
+}
+
 glm::vec3 ComponentTransform::GetPosition() const { return _translation; }
 
 void ComponentTransform::SetPosition(glm::vec3 pos) { _translation = pos; }
@@ -64,6 +76,7 @@ BIND_CLS_FUNC_DEFINE(ComponentTransform, GetRotation)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetRotation)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetRotationEular)
 BIND_CLS_FUNC_DEFINE(ComponentTransform, SetForward)
+BIND_CLS_FUNC_DEFINE(ComponentTransform, UpdateLastTrans)
 
 static PyMethodDef type_methods[] = {
   {"SetPosition", BIND_CLS_FUNC_NAME(ComponentTransform, SetPosition), METH_VARARGS, 0},
@@ -74,6 +87,7 @@ static PyMethodDef type_methods[] = {
   {"SetRotation", BIND_CLS_FUNC_NAME(ComponentTransform, SetRotation), METH_VARARGS, 0},
   {"SetRotationEular", BIND_CLS_FUNC_NAME(ComponentTransform, SetRotationEular), METH_VARARGS, 0},
   {"SetForward", BIND_CLS_FUNC_NAME(ComponentTransform, SetForward), METH_VARARGS, 0},
+  {"UpdateLastTrans", BIND_CLS_FUNC_NAME(ComponentTransform, UpdateLastTrans), METH_NOARGS, 0},
   {0, nullptr, 0, 0},
 };
 

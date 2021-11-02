@@ -66,7 +66,10 @@ namespace ECS {
       item.metalic = comp_model->metalic_id;
       item.roughness = comp_model->roughness_id;
       item.ao = comp_model->ao_id;
+      item.last_trans = comp_trans->GetLastTrans();
       render.AddRenderItem(item);
+
+      comp_trans->UpdateLastTrans();
     }
 
   }

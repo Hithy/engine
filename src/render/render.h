@@ -36,6 +36,7 @@ namespace render {
   struct RenderItem {
     uint64_t obj_id;
     glm::mat4 transform;
+    glm::mat4 last_trans;
     uint64_t mesh;
     uint64_t albedo;
     uint64_t normal;
@@ -102,12 +103,18 @@ namespace render {
   private:
     Render();
 
+    void Update();
+    void PostUpdate();
+    void PostUpdateTAA();
+
     // render
     void RenderShadow();
     void RenderGbuffer();
     void RenderSSAO();
     void RenderLight();
     void RenderSkyBox();
+    void RenderTAA();
+    void RenderPost();
 
     void ComputeClusterBox();
     void ComputeClusterLight();
@@ -125,6 +132,7 @@ namespace render {
     void InitPBR();
     void InitShadowMap();
     void InitSSAO();
+    void InitTAA();
 
   private:
     unsigned int GenShadowMap(int light_type);
@@ -145,6 +153,8 @@ namespace render {
 
     Shader* _cluster_init;
     Shader* _cluster_light;
+
+    Shader* _taa_sample;
 
     // pbr init texture
     uint64_t _pbr_texture_skybox;
@@ -174,6 +184,8 @@ namespace render {
     uint64_t _g_normal_metalic;
     uint64_t _g_view_position;
     uint64_t _g_view_normal;
+    uint64_t _g_tta_velocity;
+    uint64_t _g_tta_depth;
 
     // active camera
     glm::mat4 _camera_view;
@@ -187,6 +199,18 @@ namespace render {
     unsigned int _point_light_idx_ssbo;
     unsigned int _global_index_ssbo;
     std::vector<PLight> _cluster_point_lights;
+
+    // TAA
+    unsigned int _taa_jitter_fbo;
+    unsigned int _taa_jitter_rbo;
+    unsigned int _taa_jitter_texture;
+
+    unsigned int _taa_his_fbo;
+    unsigned int _taa_his_rbo;
+    unsigned int _taa_his_texture;
+
+    unsigned int _taa_last_fbo;
+    unsigned int _taa_last_texture;
 
     // objs to render
     std::unordered_map<uint64_t, RenderItem> _render_objects;
@@ -234,6 +258,11 @@ namespace render {
 
     unsigned int _tile_x;
     unsigned int _tile_y;
+
+    // TAA
+    int _taa_jitter_idx;
+    float _taa_blend_ratio;
+    float _taa_jitter_ratio;
 
   private:
     bool _enable_shadow;

@@ -30,10 +30,12 @@ void SystemPhysics::Tick(float dt) {
     auto comp_physics = dynamic_cast<ComponentPhysics*>(ent->GetComponent(ComponentType_Physics));
     auto comp_trans = dynamic_cast<ComponentTransform*>(ent->GetComponent(ComponentType_Transform));
 
-    auto px_pos = comp_physics->GetPosition();
-    auto px_quat = comp_physics->GetRotation();
-    comp_trans->SetPosition(px_pos);
-    comp_trans->SetRotation(px_quat);
+    if (!comp_physics->IsKinematic()) {
+      auto px_pos = comp_physics->GetPosition();
+      auto px_quat = comp_physics->GetRotation();
+      comp_trans->SetPosition(px_pos);
+      comp_trans->SetRotation(px_quat);
+    }
   }
 }
 void SystemPhysics::Start()

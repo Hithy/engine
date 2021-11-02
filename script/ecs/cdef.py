@@ -12,6 +12,7 @@ SystemType_Model = 3
 SystemType_Rotate = 4
 SystemType_SyncRender = 5
 SystemType_Physics = 6
+SystemType_HitObject = 7
 
 LightType_Direction = 1
 LightType_Point = 2

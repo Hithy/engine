@@ -9,9 +9,12 @@ class ComponentTransform : public Component {
 public:
   DECLEAR_PYCXX_OBJECT_TYPE(ComponentTransform);
   ComponentTransform()
-      : Component(ComponentType_Transform), _scale(glm::vec3(1.0f, 1.0f, 1.0f)),
-        _rotation(glm::quat(0.0f, 0.0f, 0.0f, 1.0f)),
-        _translation(glm::vec3(0.0f, 0.0f, 0.0f)){
+      : Component(ComponentType_Transform)
+      , _scale(glm::vec3(1.0f, 1.0f, 1.0f))
+      , _rotation(glm::quat(0.0f, 0.0f, 0.0f, 1.0f))
+      , _translation(glm::vec3(0.0f, 0.0f, 0.0f))
+      , _first_get_last_trans(true)
+  {
     SetTransform(glm::mat4(1.0f));
   };
 
@@ -37,9 +40,15 @@ public:
   bool SetTransform(glm::mat4 trans_mat);
   glm::mat4 GetTransform() const;
 
+  void UpdateLastTrans();
+  glm::mat4 GetLastTrans();
+
 private:
   glm::vec3 _scale;
   glm::quat _rotation;
   glm::vec3 _translation;
+
+  glm::mat4 _last_trans;
+  bool _first_get_last_trans;
 };
 } // namespace ECS

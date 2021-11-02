@@ -12,7 +12,7 @@ struct GLFWwindow;
 namespace ECS {
 
 struct InputContext {
-  float sensitivity = 10.0f;
+  double sensitivity = 10.0f;
 
   double move_delta_x = 0.0;
   double move_delta_y = 0.0;
