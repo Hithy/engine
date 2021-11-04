@@ -325,16 +325,15 @@ namespace render {
         glClear(GL_DEPTH_BUFFER_BIT);
 
         auto view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), light.second.direction, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto projection = glm::ortho(-40.0f, 40.0f, -40.0f, 40.0f, -20.0f, 20.0f);
+        auto projection = glm::ortho(-40.0f, 40.0f, -40.0f, 40.0f, -25.0f, 25.0f);
         light.second.vp = projection * view;
         light.second.shadow_map_idx = _diretion_shadow_count;
-        auto vp = projection * view;
         _shadow_shader_direction->SetFM4("shadow_vp", glm::value_ptr(light.second.vp));
         for (auto& obj : _render_objects) {
           _shadow_shader_direction->SetFM4("model", glm::value_ptr(obj.second.transform));
 
           auto mesh = GetModelResource(obj.second.mesh);
-          mesh->Draw(_shadow_shader_point);
+          mesh->Draw(_shadow_shader_direction);
         }
 
         _diretion_shadow_count++;
@@ -1035,6 +1034,8 @@ namespace render {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
       glBindTexture(GL_TEXTURE_2D, 0);
     } else if (light_type == 2) {
       // point light
@@ -1048,6 +1049,8 @@ namespace render {
       glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
       glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     }
 
