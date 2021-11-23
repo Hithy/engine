@@ -24,6 +24,9 @@
 ![ball](resource/images/screenshot/pbr.png)
 ![cluster](resource/images/screenshot/cluster1000.png)
 ![taa](resource/images/screenshot/taa.png)
+![taa_detail](resource/images/screenshot/taa_detail.png)
+![fog_inside](resource/images/screenshot/fog_inside.png)
+![fog_ea](resource/images/screenshot/fog_ea.png)
 ![rotate](resource/images/screenshot/rotate.gif)
 ![table](resource/images/screenshot/table.gif)
 
@@ -31,7 +34,7 @@
 
 ### MSVC on Windows
 
-network to access [github](https://www.github.com)
+network to access github
 
 ### gcc/clang on Linux or Mingw
 
