@@ -51,6 +51,8 @@ namespace render {
     {
       glGetShaderInfoLog(compute_shader, 512, NULL, infoLog);
       std::cout << "ERROR::SHADER::COMPUTE::COMPILATION_FAILED\n" << infoLog << std::endl;
+      std::cout << "FILE PATH: " << compute_path << std::endl;
+      throw std::exception("fail to compile shader");
     };
 
     id = glCreateProgram();
@@ -85,6 +87,8 @@ namespace render {
     {
       glGetShaderInfoLog(vert_shader, 512, NULL, infoLog);
       std::cout << "ERROR::SHADER::VS::COMPILATION_FAILED\n" << infoLog << std::endl;
+      std::cout << "FILE PATH: " << vert_path << std::endl;
+      throw std::exception("fail to compile shader");
     };
 
     glCompileShader(frag_shader);
@@ -93,6 +97,8 @@ namespace render {
     {
       glGetShaderInfoLog(frag_shader, 512, NULL, infoLog);
       std::cout << "ERROR::SHADER::FG::COMPILATION_FAILED\n" << infoLog << std::endl;
+      std::cout << "FILE PATH: " << frag_path << std::endl;
+      throw std::exception("fail to compile shader");
     };
 
     id = glCreateProgram();

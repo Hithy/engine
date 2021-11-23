@@ -55,13 +55,14 @@ def createBall(material, pos, size):
 
     return ent
 
-def createBox(material, pos, scale, rotate=None):
+def createBox(material, pos, scale, rotate=None, enable_phyx=True):
     comp_model = _engine.CreateComponentModel("resource/models/box/box.obj")
     if material:
         comp_model.SetAlbedoPath(material)
 
-    comp_physics = _engine.ComponentPhysics(False, 3, [x / 2.0 for x in scale])
-    comp_physics.SetKinematic(True)
+    if enable_phyx:
+        comp_physics = _engine.ComponentPhysics(False, 3, [x / 2.0 for x in scale])
+        comp_physics.SetKinematic(True)
 
     comp_trans = _engine.CreateComponentTransform()
     comp_trans.SetPosition(pos)
@@ -72,7 +73,8 @@ def createBox(material, pos, scale, rotate=None):
     ent = _engine.CreateEntity()
     ent.AddComponent(comp_model)
     ent.AddComponent(comp_trans)
-    ent.AddComponent(comp_physics)
+    if enable_phyx:
+        ent.AddComponent(comp_physics)
 
     return ent
 
@@ -158,7 +160,7 @@ class PyScene(_engine.Scene):
         # self.add_system(hit_object_system.HitObjectSystem()) # rotate entity each frame
 
         # enable IBL skybox
-        self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
+        # self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
 
         # floor
         self.AddEntity(createBox("", [-0.0, -5.0, -10.0], [50.0, 1.0, 50.0]))
@@ -193,16 +195,17 @@ class PyScene(_engine.Scene):
         self.AddEntity(createBall("plastic", [2.0, 0.0, -13.0], 0.5))
         self.AddEntity(createBall("plastic", [5.0, 0.0, -13.0], 0.5))
 
-        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-10.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
-        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-7.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
-        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-4.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
-        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-1.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
-        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [2.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
-        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [5.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
-        self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [8.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        self.AddEntity(createBox("", [0.0, -3.0, 0.0], [5.0, 5.0, 5.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-10.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-7.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-4.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-1.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [2.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [5.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [8.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
 
         # light
-        self.AddEntity(createDirectionLight([1.0, 1.0, 1.0], [1.0, -1.0, 0.0], 1))
+        self.AddEntity(createDirectionLight([3.0, 3.0, 3.0], [1.0, -1.0, 1.0], 1))
         # self.AddEntity(createPointLight([10.0, 10.0, 10.0], [-5.0, 4.5, -10.0], 30.0, 1))
         # self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-5.0, -2.5, -10.0], 1))
         for i in range(1000):
@@ -215,6 +218,84 @@ class PyScene(_engine.Scene):
                     3.0
                 )
             )
+
+    def SceneFog(self):
+        self.add_system(hit_object_system.HitObjectSystem()) # rotate entity each frame
+
+        # enable IBL skybox
+        # self.SetIBLPath("resource/images/Chelsea_Stairs/Chelsea_Stairs_3k.hdr")
+        # self.SetIBLPath("resource/images/hdr/Factory_Catwalk_2k.hdr")
+
+        # floor
+        self.AddEntity(createBox("", [-0.0, -12.0, -10.0], [50.0, 1.0, 50.0]))
+
+        # wall
+        self.AddEntity(createBox("", [-25.0, -3.0, -10.0], [1.0, 18.0, 50.0]))
+        self.AddEntity(createBox("", [25.0, -3.0, -10.0], [1.0, 18.0, 50.0]))
+        self.AddEntity(createBox("", [0.0, -3.0, -35.0], [50.0, 18.0, 1.0]))
+        self.AddEntity(createBox("", [0.0, -3.0, 15.0], [50.0, 18.0, 1.0]))
+
+        # objects
+        self.AddEntity(createBall("rusted_iron", [-7.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("gold", [-4.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("grass", [-1.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("plastic", [2.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("wall", [5.0, 0.0, -10.0], 0.5))
+        # self.AddEntity(createBackpack([5.0, 1.0, -15.0]))
+
+        self.AddEntity(createBall("plastic", [-7.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("plastic", [-4.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("plastic", [-1.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("plastic", [2.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("plastic", [5.0, 0.0, -10.0], 0.5))
+        self.AddEntity(createBall("plastic", [-7.0, 0.0, -7.0], 0.5))
+        self.AddEntity(createBall("plastic", [-4.0, 0.0, -7.0], 0.5))
+        self.AddEntity(createBall("plastic", [-1.0, 0.0, -7.0], 0.5))
+        self.AddEntity(createBall("plastic", [2.0, 0.0, -7.0], 0.5))
+        self.AddEntity(createBall("plastic", [5.0, 0.0, -7.0], 0.5))
+        self.AddEntity(createBall("plastic", [-7.0, 0.0, -13.0], 0.5))
+        self.AddEntity(createBall("plastic", [-4.0, 0.0, -13.0], 0.5))
+        self.AddEntity(createBall("plastic", [-1.0, 0.0, -13.0], 0.5))
+        self.AddEntity(createBall("plastic", [2.0, 0.0, -13.0], 0.5))
+        self.AddEntity(createBall("plastic", [5.0, 0.0, -13.0], 0.5))
+
+        self.AddEntity(createBox("", [15.0, 3.0, -10.0], [20.0, 1.0, 52.0]))
+        self.AddEntity(createBox("", [-15.0, 3.0, -10.0], [20.0, 1.0, 52.0]))
+        self.AddEntity(createBox("", [0.0, 3.0, -25.0], [15.0, 1.0, 25.0]))
+        self.AddEntity(createBox("", [0.0, 3.0, 5.0], [15.0, 1.0, 25.0]))
+
+        self.AddEntity(createBox("", [-5.0, -5.0, -10.0], [1.0, 8.0, 1.0]))
+        self.AddEntity(createBox("", [-15.0, -5.0, -10.0], [1.0, 1.0, 1.0]))
+
+
+        # self.AddEntity(createBox("", [0, 0, -0], [1000.0, 1000.0, 1000.0], None, False))
+        
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-10.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-7.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-4.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [-1.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [2.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [5.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createCylinder("resource/images/pbr/wall/albedo.png", [8.0, -3.0, -10.0], [1.0, 1.0, 1.0]))
+
+        # light
+        # self.AddEntity(createDirectionLight([0.1, 0.1, 0.1], [1.0, -1.0, 1.0]))
+        self.AddEntity(createPointLight([10.0, 10.0, 10.0], [10.0, 8, -10.0], 50.0, 1))
+        # self.AddEntity(createPointLight([0.1, 0.0, 0.0], [10.0, 0, -10.0], 50.0))
+        # self.AddEntity(createBox("", [-5.0, 4.5, -10.0], [1.0, 1.0, 1.0]))
+        # self.AddEntity(createPointLight([5.0, 5.0, 5.0], [5.0, 8.5, -5.0], 10.0, 1))
+        # self.AddEntity(createPointLight([100.0, 100.0, 100.0], [-5.0, -2.5, -10.0], 1))
+        for i in range(00):
+            self.AddEntity(
+                createPointLight(
+                    [2.0 * x for x in [random.random(), random.random(), random.random()]],
+                    [random.random() * 48.0 - 24.0,
+                     -2.5,
+                     random.random() * 48.0 - 34.0],
+                    3.0
+                )
+            )
+
 
     def InitBaseSystem(self):
         # systems
@@ -234,8 +315,9 @@ class PyScene(_engine.Scene):
 
     def Init(self):
         self.InitBaseSystem()
-        self.Scene1000()
+        # self.Scene1000()
         # self.SceneTAA()
+        self.SceneFog()
         self.InitRenderSystem()
 
     def add_system(self, sys):

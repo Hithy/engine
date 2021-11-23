@@ -19,6 +19,17 @@ namespace render {
   struct AABBBox {
     glm::vec4 minPoint;
     glm::vec4 maxPoint;
+    glm::vec4 minNearPoint;
+    glm::vec4 maxNearPoint;
+  };
+
+  struct Fog {
+    glm::vec4 scatter_extinction;
+    glm::vec4 emitter_g;
+  };
+
+  struct FogAccum {
+    glm::vec4 scatter_extinction;
   };
 
   struct PLight {
@@ -111,6 +122,7 @@ namespace render {
     void RenderShadow();
     void RenderGbuffer();
     void RenderSSAO();
+    void RenderFog();
     void RenderLight();
     void RenderSkyBox();
     void RenderTAA();
@@ -127,6 +139,7 @@ namespace render {
     void InitPbrBrdf();
 
     void InitCluster();
+    void InitFog();
     void InitShader();
     void InitObjects();
     void InitPBR();
@@ -211,6 +224,12 @@ namespace render {
 
     unsigned int _taa_last_fbo;
     unsigned int _taa_last_texture;
+
+    // fog
+    unsigned int _fog_cluster_ssbo;
+    unsigned int _fog_cluster_last_frame_ssbo;
+    unsigned int _fog_cluster_this_frame_ssbo;
+    unsigned int _fog_taa_noise_ssbo;
 
     // objs to render
     std::unordered_map<uint64_t, RenderItem> _render_objects;

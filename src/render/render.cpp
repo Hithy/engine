@@ -1,7 +1,9 @@
+#include <glm/ext/matrix_transform.hpp>
 #include <memory>
 #include <vector>
 #include <random>
 #include <chrono>
+#include <iostream>
 
 #include "render.h"
 
@@ -68,6 +70,55 @@ namespace render {
     return glm::vec2(res.x - 0.5, res.y - 0.5) * 1.0f;
   }
 
+  static void GetHexagonalClosePackedSpheres7(std::vector<glm::vec2>& coords)
+  {
+
+    float r = 0.17054068870105443882f;
+    float d = 2 * r;
+    float s = r * glm::sqrt(3);
+
+    // Try to keep the weighted average as close to the center (0.5) as possible.
+    //  (7)(5)    ( )( )    ( )( )    ( )( )    ( )( )    ( )(o)    ( )(x)    (o)(x)    (x)(x)
+    // (2)(1)(3) ( )(o)( ) (o)(x)( ) (x)(x)(o) (x)(x)(x) (x)(x)(x) (x)(x)(x) (x)(x)(x) (x)(x)(x)
+    //  (4)(6)    ( )( )    ( )( )    ( )( )    (o)( )    (x)( )    (x)(o)    (x)(x)    (x)(x)
+    coords[0] = glm::vec2(0, 0);
+    coords[1] = glm::vec2(-d, 0);
+    coords[2] = glm::vec2(d, 0);
+    coords[3] = glm::vec2(-r, -s);
+    coords[4] = glm::vec2(r, s);
+    coords[5] = glm::vec2(r, -s);
+    coords[6] = glm::vec2(-r, s);
+
+    // Rotate the sampling pattern by 15 degrees.
+    const float cos15 = 0.96592582628906828675f;
+    const float sin15 = 0.25881904510252076235f;
+
+    for (int i = 0; i < 7; i++)
+    {
+      glm::vec2 coord = coords[i];
+
+      coords[i].x = coord.x * cos15 - coord.y * sin15;
+      coords[i].y = coord.x * sin15 + coord.y * cos15;
+    }
+  }
+
+  static std::vector<glm::vec4> gen_fog_offset() {
+    std::vector<glm::vec4> res;
+    std::vector<glm::vec2> xy_offset(7);
+    GetHexagonalClosePackedSpheres7(xy_offset);
+    const float m_zSeq[] = {7.0f / 14.0f, 3.0f / 14.0f, 11.0f / 14.0f, 5.0f / 14.0f, 9.0f / 14.0f, 1.0f / 14.0f, 13.0f / 14.0f};
+    for (int i = 0; i < 7; i++) {
+      res.push_back(glm::vec4(xy_offset[i].x, xy_offset[i].y, m_zSeq[i], 0));
+    }
+    std::cout << &res << std::endl;
+    return res;
+  }
+
+  auto& GetFogNoise() {
+      static auto halton33_list = gen_fog_offset();
+      return halton33_list;
+  }
+
   void Render::PrepareRender()
   {
     if (_enable_ibl) {
@@ -87,21 +138,39 @@ namespace render {
 
   void Render::Update()
   {
+      _cluster_point_lights.resize(_point_light.size());
+      int idx = 0;
+      for (auto const& light : _point_light) {
+          _cluster_point_lights[idx].diffuse = light.second.color;
+          _cluster_point_lights[idx].position = light.second.position;
+          _cluster_point_lights[idx].radius = light.second.radius;
+          _cluster_point_lights[idx].shadow_idx = -1;
+          idx++;
+      }
+
+      glBindBuffer(GL_SHADER_STORAGE_BUFFER, _point_light_ssbo);
+      glBufferData(GL_SHADER_STORAGE_BUFFER,
+          _cluster_point_lights.size() * sizeof(PLight),
+          _cluster_point_lights.data(), GL_DYNAMIC_COPY);
   }
 
   void Render::PostUpdate()
   {
     PostUpdateTAA();
+
+    glBindBuffer(GL_COPY_READ_BUFFER, _fog_cluster_ssbo);
+    glBindBuffer(GL_COPY_WRITE_BUFFER, _fog_cluster_last_frame_ssbo);
+    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, _z_slices * _tile_x * _tile_y * sizeof(FogAccum));
   }
 
   void Render::DoRender()
   {
     Update();
     auto begin_time = std::chrono::steady_clock::now();
-    ComputeClusterLight();
-    auto end_cluster_box = std::chrono::steady_clock::now();
     RenderShadow();
     auto end_shadow = std::chrono::steady_clock::now();
+    ComputeClusterLight();
+    auto end_cluster_box = std::chrono::steady_clock::now(); 
     RenderGbuffer();
     auto end_gbuffer = std::chrono::steady_clock::now();
     RenderSSAO();
@@ -143,6 +212,7 @@ namespace render {
     InitShadowMap();
     InitSSAO();
     InitCluster();
+    InitFog();
     InitTAA();
   }
 
@@ -239,8 +309,8 @@ namespace render {
 
     _z_near = 0.1f;
     _z_far = 200.0f;
-    _z_slices = 20;
-    _tile_size = 64;
+    _z_slices = 64;
+    _tile_size = 8;
 
     _tile_x = (_windows_width + _tile_size - 1) / _tile_size;
     _tile_y = (_windows_height + _tile_size - 1) / _tile_size;
@@ -262,8 +332,8 @@ namespace render {
     if (!_enable_shadow) {
       return;
     }
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
+    /*glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);*/
 
     glBindFramebuffer(GL_FRAMEBUFFER, _shadow_frame_buffer);
     glViewport(0, 0, _shadow_map_width, _shadow_map_height);
@@ -307,9 +377,12 @@ namespace render {
       }
       cluster_index++;
     }
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _point_light_ssbo);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, _cluster_point_lights.size() * sizeof(PLight), _cluster_point_lights.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    glCullFace(GL_BACK);
-    glDisable(GL_CULL_FACE);
+    /*glCullFace(GL_BACK);
+    glDisable(GL_CULL_FACE);*/
 
     // direction_light
     _shadow_shader_direction->Use();
@@ -429,6 +502,10 @@ namespace render {
 
     renderQuad();
   }
+  void Render::RenderFog()
+  {
+
+  }
   void Render::RenderLight()
   {
     glBindFramebuffer(GL_FRAMEBUFFER, _taa_jitter_fbo);
@@ -471,13 +548,12 @@ namespace render {
         shadow_idx++;
       }
     }
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _point_light_ssbo);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, _cluster_point_lights.size() * sizeof(PLight), _cluster_point_lights.data());
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     /*glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, _light_grid_ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, _point_light_ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, _point_light_idx_ssbo);*/
+    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, _fog_cluster_last_frame_ssbo);
+    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, _fog_cluster_this_frame_ssbo);
     _light->SetUInt("screen_width", _windows_width);
     _light->SetUInt("screen_height", _windows_height);
     _light->SetUInt("tile_size", _tile_size);
@@ -587,7 +663,7 @@ namespace render {
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, _taa_jitter_texture);
       taa_velocity_texture->BindToTexture(2);
-      
+
       _taa_sample->SetInt("last_frame", 0);
       _taa_sample->SetInt("jitter_frame", 1);
       _taa_sample->SetInt("velocity", 2);
@@ -628,37 +704,78 @@ namespace render {
 
     _cluster_init->Compute(_tile_x, _tile_y, _z_slices);
   }
+  static glm::mat4 ComputePixelCoordToWorldSpaceViewDirectionMatrix(glm::vec4 resolution, glm::mat4 vp) {
+    glm::mat4 viewSpaceRasterTransform(
+      glm::vec4(2.0f * resolution.z, 0.0f, 0.0f, 0.0f),
+      glm::vec4(0.0f, -2.0f * resolution.w, 0.0f, 0.0f),
+      glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+      glm::vec4(-1.0f, 1.0f, 0.0f, 1.0f));
+    auto transformT = glm::transpose(glm::inverse(vp));
+    return transformT * viewSpaceRasterTransform;
+  }
+  static float ComputZPlaneTexelSpacing(float planeDepth, float verticalFoV, float resolutionY)
+  {
+    float tanHalfVertFoV = glm::tan(0.5f * verticalFoV);
+    return tanHalfVertFoV * (2.0f / resolutionY) * planeDepth;
+  }
   void Render::ComputeClusterLight()
   {
-    _cluster_point_lights.resize(_point_light.size());
-    int idx = 0;
-    for (auto const& light : _point_light) {
-      _cluster_point_lights[idx].diffuse = light.second.color;
-      _cluster_point_lights[idx].position = light.second.position;
-      _cluster_point_lights[idx].radius = light.second.radius;
-      _cluster_point_lights[idx].shadow_idx = -1;
-      idx++;
-    }
+    static glm::mat4 last_view = _camera_view;
+    static glm::mat4 last_proj = _camera_projection;
+    static glm::vec3 last_pos = _camera_pos;
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _point_light_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, _cluster_point_lights.size() * sizeof(PLight), _cluster_point_lights.data(), GL_DYNAMIC_COPY);
+    auto test_mat = ComputePixelCoordToWorldSpaceViewDirectionMatrix(glm::vec4(0, 0, 1.0 / 260, 1.0 / 146), _camera_projection * _camera_view);
+
+    auto my_vec = test_mat * glm::vec4(130, 73, 1, 1);
+
+    auto test_val = ComputZPlaneTexelSpacing(1.0f, glm::radians(60.0f), 146);
 
     unsigned int init_index = 0;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, _global_index_ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int), &init_index, GL_DYNAMIC_COPY);
 
+    auto delta = _camera_pos - last_pos;
+
     _cluster_light->Use();
+    _cluster_light->SetUInt("frame_idx", _taa_jitter_idx);
     _cluster_light->SetFM4("view", glm::value_ptr(_camera_view));
+    _cluster_light->SetFM4("last_view", glm::value_ptr(last_view));
+    _cluster_light->SetFM4("last_proj", glm::value_ptr(last_proj));
+    _cluster_light->SetFV3("cam_world_pos", glm::value_ptr(_camera_pos));
+
+    // shadow
+    int point_shadow_delta_base = 10;
+    int shadow_idx = 0;
+    for (int i = 0; i < _max_point_light_shadow; i++) {
+        std::string point_light_map = "point_light_shadow[" + std::to_string(i) + "].shadow_map";
+        _cluster_light->SetInt(point_light_map.c_str(), point_shadow_delta_base);
+    }
+    for (const auto& p_light : _point_light) {
+        bool enable_shadow = _enable_shadow && p_light.second.enable_shadow && shadow_idx < _max_point_light_shadow;
+        if (enable_shadow) {
+            glActiveTexture(GL_TEXTURE0 + point_shadow_delta_base + shadow_idx);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, _point_shadow_map[p_light.second.shadow_map_idx]);
+            std::string shadow_name = "point_light_shadow[" + std::to_string(shadow_idx) + "]";
+            _cluster_light->SetInt((shadow_name + ".shadow_map").c_str(), point_shadow_delta_base + shadow_idx);
+            shadow_idx++;
+        }
+    }
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, _cluster_ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, _light_grid_ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, _point_light_ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, _point_light_idx_ssbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, _global_index_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, _fog_cluster_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, _fog_cluster_last_frame_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, _fog_taa_noise_ssbo); 
 
     unsigned int sum_cluster = _tile_x * _tile_y * _z_slices;
     _cluster_light->Compute(1, (sum_cluster + 255) / 256, 4);
 
+    last_view = _camera_view;
+    last_proj = _camera_projection;
+    last_pos = _camera_pos;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   }
   void Render::InitPbrRenderBuffer()
@@ -832,10 +949,33 @@ namespace render {
 
     glGenBuffers(1, &_point_light_idx_ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, _point_light_idx_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 1000000 * sizeof(unsigned int), nullptr, GL_DYNAMIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 10000000 * sizeof(unsigned int), nullptr, GL_DYNAMIC_COPY);
 
     glGenBuffers(1, &_point_light_ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+  }
+  void Render::InitFog()
+  {
+    glGenBuffers(1, &_fog_cluster_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _fog_cluster_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, _z_slices * _tile_x * _tile_y * sizeof(FogAccum), nullptr, GL_DYNAMIC_COPY);
+
+    glGenBuffers(1, &_fog_cluster_last_frame_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _fog_cluster_last_frame_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, _z_slices * _tile_x * _tile_y * sizeof(FogAccum), nullptr, GL_DYNAMIC_COPY);
+
+    glGenBuffers(1, &_fog_cluster_this_frame_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _fog_cluster_this_frame_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, _z_slices * _tile_x * _tile_y * sizeof(FogAccum), nullptr, GL_DYNAMIC_COPY);
+
+    // noise
+    auto noise_list = GetFogNoise();
+    for (auto const& item : noise_list) {
+      std::cout << &item << std::endl;
+    }
+    glGenBuffers(1, &_fog_taa_noise_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, _fog_taa_noise_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, noise_list.size() * sizeof(glm::vec4), noise_list.data(), GL_DYNAMIC_COPY);
   }
   void Render::InitShader()
   {
@@ -990,10 +1130,13 @@ namespace render {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _taa_jitter_rbo);
 
     _taa_jitter_texture = render::genTexture2D(_windows_width, _windows_height, false, 4);
+    auto debug_texture = render::genTexture2D(_windows_width, _windows_height, false, 4);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                            _taa_jitter_texture, 0);
-    unsigned int attachments[1] = { GL_COLOR_ATTACHMENT0 };
-    glDrawBuffers(1, attachments);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
+      debug_texture, 0);
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
 
     // history frame
     glGenRenderbuffers(1, &_taa_his_rbo);

@@ -4,6 +4,8 @@ layout (local_size_x = 1, local_size_y = 1) in;
 struct AABBBox {
   vec4 minPoint;
   vec4 maxPoint;
+  vec4 minNearPoint;
+  vec4 maxNearPoint;
 };
 
 layout(std430, binding = 1) buffer Cluster
@@ -43,6 +45,9 @@ void main() {
 
   cluster[cluster_idx].minPoint = vec4(min(min(min_front, min_back), min(max_front, max_back)), 1.0);
   cluster[cluster_idx].maxPoint = vec4(max(max(min_front, min_back), max(max_front, max_back)), 1.0);
+
+  cluster[cluster_idx].minNearPoint = vec4(min_front, 1.0);
+  cluster[cluster_idx].maxNearPoint = vec4(max_front, 1.0);
 }
 
 vec3 screen2view(uvec2 screen_pos) {
