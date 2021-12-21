@@ -86,7 +86,7 @@ void World::initGL() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+  // glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
   _window = glfwCreateWindow(ctx.window_width, ctx.window_height,
                              ctx.title.c_str(), NULL, NULL);
@@ -108,8 +108,8 @@ void World::initGL() {
   glDepthFunc(GL_LEQUAL);
   // glEnable(GL_CULL_FACE);
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-  glEnable(GL_DEBUG_OUTPUT);
-  glDebugMessageCallback(MessageCallback, 0);
+  /*glEnable(GL_DEBUG_OUTPUT);
+  glDebugMessageCallback(MessageCallback, 0);*/
 
   ImGui::CreateContext();
   ImGui_ImplGlfw_InitForOpenGL(_window, true);

@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 const float PI = 3.14159265359;
 
@@ -46,7 +46,7 @@ struct DLightShadow {
 uniform int point_light_count;
 uniform PLight point_light_list[POINT_LIGHT_MAX_COUNT];
 
-#define DIRECTION_LIGHT_MAX_COUNT 1000
+#define DIRECTION_LIGHT_MAX_COUNT 100
 uniform int direction_light_count;
 uniform DLight direction_light_list[DIRECTION_LIGHT_MAX_COUNT];
 
