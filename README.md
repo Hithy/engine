@@ -42,7 +42,8 @@ network to access github
 - glm
 - assimp
 
-## Run
+## Run (tested on RX 470, Polaris 10, GCN 4)
+
 
 ``` bash
 # clone
